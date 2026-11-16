@@ -1,3 +1,12 @@
+# 🌐 網上版：https://rightpick-game.pages.dev
+
+- 由 Cloudflare Pages 自動部署：push 去 GitHub `main` 分支，約 1 分鐘自動更新。
+- **排行榜**（擊碎爛工・每日香港時間 0 點重新計）：`functions/api/scores.js` ＋ D1 數據庫 `rightpick-leaderboard`（設定喺 `wrangler.toml`）。
+- 想用職員面板（按 P → 🏆 排行榜管理）隱藏搞事記錄：喺 Cloudflare → Workers 和 Pages → rightpick-game → 設定 → 變數和密碼，加一個密碼類型嘅 `STAFF_KEY`，然後重新部署。
+- 亦可以喺 Cloudflare → D1 → rightpick-leaderboard → 主控台 直接用 SQL 管理記錄。
+
+---
+
 # 🆕 合併版說明（大螢幕 Kiosk ＋ 手機掃碼玩）
 
 - **大螢幕**：照舊用 `start-windows.bat`（或網址加 `?kiosk=1`）。放上 https 網址之後，主選單底部 QR 會自動變成「📱 排緊隊？掃碼用自己手機玩」。
