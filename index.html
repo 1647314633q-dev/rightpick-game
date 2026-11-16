@@ -3293,18 +3293,30 @@ function resetDwell(){
 }
 function updateDwell(dt){
   if(mode==='none') return;
-  const now=nowMs();
-  const pts=liveHands();
-  $$('.screen.active [data-dwell]').forEach(el=>{
-    const r=el.getBoundingClientRect();
-    const inside = now>dwellLock && pts.some(p=>p.x>=r.left&&p.x<=r.right&&p.y>=r.top&&p.y<=r.bottom);
+  const now=nowMs(), H=innerHeight;
+  // 手勢追蹤偶爾會甩幾格：短暫睇唔到嘅手（0.35 秒內）都照計
+  const pts=hands.filter(h=>(h.lost||0)<.35);
+  const els=$$('.screen.active [data-dwell]');
+  const rects=els.map(el=>el.getBoundingClientRect());
+  const inRect=(p,r,pad)=>p.x>=r.left-pad&&p.x<=r.right+pad&&p.y>=r.top-pad&&p.y<=r.bottom+pad;
+  els.forEach((el,i)=>{
+    const r=rects[i], was=el.classList.contains('hover');
+    // 已經停緊喺上面：邊界放寬，手震出少少界都唔會斷
+    const pad = was ? H*.07 : H*.01;
+    const hit = now>dwellLock && pts.some(p=>{
+      if(!inRect(p,r,pad)) return false;
+      // 如果隻手其實喺另一張卡入面，就讓俾嗰張卡
+      return !rects.some((r2,j)=>j!==i && inRect(p,r2,0) && !inRect(p,r,0));
+    });
     const need=parseFloat(el.dataset.dwell)||1.2;
     let v=el._d||0;
-    v = inside ? v+dt/need : Math.max(0,v-dt*2/need);
-    if(inside && !el.classList.contains('hover')) sfx.tick();
+    if(hit){ el._out=0; v+=dt/need; }
+    else{ el._out=(el._out||0)+dt; if(el._out>.5) v=Math.max(0,v-dt*1.5/need); }
+    const inside = hit || (was && el._out<=.5);
+    if(inside && !was) sfx.tick();
     el.classList.toggle('hover',inside);
     el._d=v; el.style.setProperty('--p',Math.min(1,v));
-    if(v>=1){ el._d=0; el.style.setProperty('--p',0); el.click(); }
+    if(v>=1){ el._d=0; el._out=0; el.style.setProperty('--p',0); el.click(); }
   });
 }
 
@@ -4519,6 +4531,12 @@ function demoResult(){
   const cfg=conf[kind]||conf.fortune;
   setTimeout(()=>showResult(cfg),300);
 }
+
+/* 主選單卡：手掌停留 / 撳 都會開始遊戲 */
+$$('#s-menu .card[data-game]').forEach(el=>el.addEventListener('click',()=>{
+  if(App.screen!=='menu') return;
+  sfx.select(); startGame(el.dataset.game);
+}));
 
 /* 測試用 API（唔影響玩家） */
 window.__rp={startGame,goMenu,showResult,Cards,Stats,CONFIG,CFG,
