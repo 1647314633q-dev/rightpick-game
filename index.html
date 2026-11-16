@@ -387,6 +387,22 @@ b{color:var(--y)}
 .stat-cell b{display:block;font-size:calc(2.6*var(--u));color:var(--y);line-height:1.2}
 .stat-cell span{font-size:calc(1.45*var(--u));opacity:.75;font-weight:700}
 
+/* ---------- 排行榜 ---------- */
+.lb-box{background:rgba(0,0,0,.38);border:calc(.35*var(--u)) solid rgba(255,210,63,.55);border-radius:calc(1.8*var(--u));padding:calc(1.4*var(--u)) calc(2*var(--u));font-size:calc(2.1*var(--u))}
+.lb-head{display:flex;align-items:center;justify-content:space-between;gap:calc(1*var(--u));font-weight:900;margin-bottom:calc(.8*var(--u))}
+.lb-head .me{color:var(--y);font-size:1.15em}
+.lb-list{list-style:none;margin:0;padding:0}
+.lb-list li{display:flex;gap:calc(1*var(--u));padding:calc(.35*var(--u)) calc(.6*var(--u));border-radius:calc(.8*var(--u))}
+.lb-list li .n{width:2.2em;font-weight:900;opacity:.8}
+.lb-list li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-list li .sc{font-weight:900}
+.lb-list li.lb-me{background:var(--y);color:var(--ink)}
+.lb-rename{margin-top:calc(.8*var(--u));font:inherit;font-weight:700;font-size:.95em;background:#fff;color:var(--ink);border:0;border-radius:calc(1*var(--u));padding:calc(.7*var(--u)) calc(1.6*var(--u));cursor:pointer}
+.lb-strip{margin-top:calc(2.6*var(--u));max-width:92vw;background:rgba(0,0,0,.42);border-radius:calc(4*var(--u));padding:calc(1*var(--u)) calc(2.6*var(--u));font-size:calc(2.2*var(--u));font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none}
+.lb-strip.on{display:block}
+.lb-strip b{color:var(--y)}
+.lb-staff{margin-top:8px;max-height:260px;overflow:auto;font-size:13px}
+.lb-staff div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.1)}
 /* ---------- 手機玩家模式（掃碼用自己手機玩） ---------- */
 .inapp{display:none;margin-top:calc(2*var(--u));background:var(--r);color:#fff;padding:calc(1.4*var(--u)) calc(2.4*var(--u));border-radius:calc(1.6*var(--u));font-size:calc(2.3*var(--u));font-weight:700;text-align:center;line-height:1.5}
 .inapp.on{display:block}
@@ -468,6 +484,7 @@ body.phone .res-timer{display:none}
       <span class="tag">打圈扭出命定職業</span>
     </div>
   </div>
+  <div class="lb-strip" id="lb-strip"></div>
   <div class="menu-foot">
     <div class="qr" id="menu-qr"></div>
     <div class="foot-txt"><b>RightPick</b>　真實公司評價・搵工避坑<br><span>免費玩・完成挑戰即場蓋印</span></div>
@@ -3358,6 +3375,7 @@ function endGame(){
   goMenu();
 }
 function refreshMenuMeta(){
+  LB.refreshStrip(true);
   const best=Stats.today().best||{};
   const b=$('#best-smash');
   if(b) b.textContent = best.smash ? `今日最高 ${best.smash} 分` : '';
@@ -3367,6 +3385,54 @@ function refreshMenuMeta(){
     fc.innerHTML = n ? `今日已有<br><b>${n}</b> 人挑戰` : '今日<br>做第一個';
   }
 }
+
+/* ============================ 11b. 排行榜（Cloudflare D1） ============================ */
+const LB = {
+  ok: !isLocalHostEarly() && /^https?:$/.test(location.protocol),
+  last: 0,
+  async call(method, body, qs=''){
+    const r = await fetch('/api/scores'+qs, {method, headers: body?{'content-type':'application/json'}:{}, body: body?JSON.stringify(body):undefined, cache:'no-store'});
+    if(!r.ok) throw new Error('lb '+r.status);
+    return r.json();
+  },
+  async top(n=5){ if(!this.ok) return null; try{ return await this.call('GET',null,'?game=smash&limit='+n); }catch(e){ this.fail(e); return null; } },
+  async submit(score,hits){ if(!this.ok) return null; try{ return await this.call('POST',{game:'smash',score,hits}); }catch(e){ console.warn(e); return null; } },
+  async rename(id,token,name){ return this.call('PATCH',{id,token,name}); },
+  fail(e){ console.warn('排行榜未啟用',e); if(String(e).includes('404')||String(e).includes('405')) this.ok=false; },
+  esc(t){ return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); },
+  listHtml(top,mineId){
+    return `<ol class="lb-list">${top.map((r,i)=>`<li class="${r.id===mineId?'lb-me':''}"><span class="n">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span><span class="nm">${this.esc(r.name)}</span><span class="sc">${r.score}</span></li>`).join('')}</ol>`;
+  },
+  async renderResult(el,score,hits){
+    const res = await this.submit(score,hits);
+    if(!el.isConnected) return;
+    if(!res){ el.remove(); return; }
+    const draw=()=>{
+      let top=res.top.slice();
+      el.innerHTML=`<div class="lb-head"><span>🏆 今日排行榜</span><span class="me">你排第 ${res.rank} 名<small style="opacity:.75;font-weight:700">／${res.total} 人</small></span></div>
+        ${this.listHtml(top,res.id)}
+        ${res.rank>top.length?`<ol class="lb-list" start="${res.rank}"><li class="lb-me"><span class="n">${res.rank}.</span><span class="nm">${this.esc(res.name)}</span><span class="sc">${score}</span></li></ol>`:''}
+        ${IS_PHONE?`<button class="lb-rename" id="lb-rename">✏️ 改花名（而家叫「${this.esc(res.name)}」）</button>`:''}`;
+      const b=el.querySelector('#lb-rename');
+      if(b) b.onclick=async()=>{
+        const n=prompt('輸入你嘅花名（最多 12 個字）',res.name); if(!n) return;
+        try{ const r=await this.rename(res.id,res.token,n); res.name=r.name; res.top.forEach(t=>{ if(t.id===res.id) t.name=r.name; }); draw(); }
+        catch(e){ toast('呢個花名用唔到，試另一個 🙏'); }
+      };
+    };
+    draw();
+  },
+  async refreshStrip(force){
+    const el=$('#lb-strip'); if(!el||!this.ok) return;
+    if(!force && Date.now()-this.last<20000) return;
+    this.last=Date.now();
+    const d=await this.top(5);
+    if(!d||!d.top.length){ el.classList.remove('on'); return; }
+    el.innerHTML='🏆 今日「擊碎爛工」排行榜　'+d.top.map((r,i)=>`${['🥇','🥈','🥉'][i]||(i+1)+'.'} ${this.esc(r.name)} <b>${r.score}</b>`).join('　');
+    el.classList.add('on');
+  },
+};
+function isLocalHostEarly(){ return /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname) || location.protocol==='file:'; }
 
 /* ============================ 12. 結果畫面 ============================ */
 function showResult(o){
@@ -3385,6 +3451,7 @@ function showResult(o){
         <h2 class="res-title">${o.title}</h2>
         ${o.sub?`<p class="res-sub">${o.sub}</p>`:''}
         <div class="pitch">${brand(o.pitch)}</div>
+        ${o.lb && LB.ok?'<div class="lb-box" id="lb-box">🏆 計緊排名…</div>':''}
         ${IS_PHONE?`<div class="scan-box"><div style="font-size:calc(5*var(--u))">📸</div><div><div class="scan-t">截圖呢張卡</div><div class="scan-s">放上 IG Story，話俾朋友知你避開咗邊個職場地雷</div></div></div>`:`<div class="scan-box">
           <div class="qr" id="res-qr"></div>
           <div>
@@ -3405,6 +3472,7 @@ function showResult(o){
     </div>`;
   show('s-result');
   if(o.gold) confetti(220);
+  const lbEl=$('#lb-box'); if(lbEl) LB.renderResult(lbEl,o.lb.score,o.lb.hits);
   const qrEl=$('#res-qr'); if(qrEl) qrInto(qrEl,shareUrl.url);
   $('#b-again').onclick=()=>{sfx.select();startGame(o.replay);};
   $('#b-home').onclick=()=>{sfx.select();goMenu();};
@@ -3640,7 +3708,8 @@ function SmashGame(){
         replay:'smash',
         card:Cards.smash({score,rank,hits,nem}),
         pitch:'想搵份唔使踩雷嘅好工，記得留意 <b>{brand}</b> 嘅篩選同評估！',
-        shareCode:`smash;${score};${nemIdx};${hits}`
+        shareCode:`smash;${score};${nemIdx};${hits}`,
+        lb:{score,hits}
       });
     },1300);
   }
@@ -4271,6 +4340,8 @@ const Staff = {
             <div class="staff-row">
               <button data-act="csv">匯出 CSV</button>
               <button class="ghost" data-act="reset">清除今日統計</button>
+              <button class="ghost" data-act="lb">🏆 排行榜管理</button>
+              <div class="lb-staff" id="lb-staff"></div>
             </div>
           </section>
           <section>
@@ -4324,6 +4395,20 @@ const Staff = {
     $('#st-timeout').oninput=e=>{ CFG.resultTimeout=+e.target.value; e.target.nextElementSibling.textContent=CFG.resultTimeout+'秒'; saveCfg(); };
   },
   async act(a){
+    if(a==='lb'){
+      const box=$('#lb-staff'); if(!box) return;
+      if(!LB.ok){ box.textContent='排行榜只喺網上版（Cloudflare）啟用'; return; }
+      const d=await LB.top(30); if(!d){ box.textContent='讀取失敗'; return; }
+      box.innerHTML = d.top.length ? d.top.map((r,i)=>`<div><span>${i+1}. ${LB.esc(r.name)} — ${r.score}</span><button class="ghost" data-del="${r.id}">隱藏</button></div>`).join('') : '今日未有記錄';
+      box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+        let key=sessionStorage.getItem('rp_staff_key');
+        if(!key){ key=prompt('輸入職員密碼（Cloudflare 設定入面嘅 STAFF_KEY）'); if(!key) return; }
+        const r=await fetch('/api/scores?id='+b.dataset.del,{method:'DELETE',headers:{'x-staff-key':key}});
+        if(r.ok){ sessionStorage.setItem('rp_staff_key',key); toast('已隱藏'); this.act('lb'); LB.refreshStrip(true); }
+        else { sessionStorage.removeItem('rp_staff_key'); toast(r.status===403?'密碼錯，或者未喺 Cloudflare 設定 STAFF_KEY':'隱藏失敗'); }
+      });
+      return;
+    }
     if(a==='reset'){
       if(!confirm('清除今日統計？')) return;
       Stats.d={day:Stats.dayKey(),plays:{},done:{},choices:{},golds:0,best:{}};
@@ -4531,6 +4616,9 @@ function demoResult(){
   const cfg=conf[kind]||conf.fortune;
   setTimeout(()=>showResult(cfg),300);
 }
+
+/* 主選單排行榜每 30 秒更新 */
+setInterval(()=>{ if(App.screen==='menu') LB.refreshStrip(); },30000);
 
 /* 主選單卡：手掌停留 / 撳 都會開始遊戲 */
 $$('#s-menu .card[data-game]').forEach(el=>el.addEventListener('click',()=>{

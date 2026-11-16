@@ -1,0 +1,9 @@
+# Cloudflare Pages 設定（排行榜用 D1 數據庫）
+name = "rightpick-game"
+pages_build_output_dir = "."
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rightpick-leaderboard"
+database_id = "c7905ab4-cc73-499b-8988-dbe837f5c06e"
