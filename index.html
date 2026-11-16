@@ -1,0 +1,4531 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#080a18">
+<title>RightPick 職場遊樂場｜Career Fair 互動遊戲</title>
+<style>
+/* =========================================================
+   RightPick 職場遊樂場 — 展覽 Kiosk 版
+   1 個大螢幕 + 1 個 webcam + 手勢操作，唔需要玩家手機／電腦
+   ========================================================= */
+:root{--u:1vmin;
+  --bg:#080a18; --ink:#14152b; --y:#FFD23F; --r:#FF4D5E; --c:#2EC4B6; --p:#FF6FB5; --v:#9b8cff;
+  --paper:#fffdf7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:#fff;
+  font-family:"Noto Sans HK","PingFang HK","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,-apple-system,sans-serif;
+  -webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+video#cam{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#bg{z-index:0}
+#fx{z-index:6;pointer-events:none}
+.screen{position:fixed;inset:0;z-index:2;display:none;flex-direction:column;align-items:center;justify-content:center;padding:calc(3*var(--u));overflow:hidden}
+.screen.active{display:flex}
+b{color:var(--y)}
+.hide{display:none !important}
+
+/* ---------- 共用元件 ---------- */
+.brand{font-weight:900;font-size:calc(5*var(--u));line-height:1;letter-spacing:.01em;text-shadow:0 calc(.6*var(--u)) 0 rgba(0,0,0,.35)}
+.brand .rp{color:var(--y)}
+.brand .sub{display:inline-block;margin-left:calc(1.4*var(--u));background:var(--r);color:#fff;padding:calc(.55*var(--u)) calc(1.8*var(--u));
+  border-radius:calc(1.2*var(--u));font-size:.6em;transform:rotate(-3deg);vertical-align:middle;text-shadow:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:calc(1*var(--u));background:#fff;color:var(--ink);
+  font-weight:900;font-size:calc(2.7*var(--u));padding:calc(2*var(--u)) calc(3.4*var(--u));border-radius:calc(2*var(--u));border:0;cursor:pointer;
+  box-shadow:0 calc(.9*var(--u)) 0 rgba(0,0,0,.35);position:relative;overflow:hidden;transition:transform .12s}
+.btn:active{transform:translateY(calc(.3*var(--u)))}
+.btn.big{font-size:calc(4*var(--u));padding:calc(2.8*var(--u)) calc(6*var(--u));background:var(--y)}
+.btn.ghost{background:rgba(255,255,255,.08);color:#fff;box-shadow:none;border:calc(.3*var(--u)) solid rgba(255,255,255,.35);
+  font-size:calc(2.1*var(--u));padding:calc(1.3*var(--u)) calc(2.6*var(--u))}
+.btn.small{font-size:calc(2.1*var(--u));padding:calc(1.3*var(--u)) calc(2.6*var(--u))}
+
+[data-dwell]{position:relative;cursor:pointer}
+[data-dwell]::after{content:"";position:absolute;left:0;bottom:0;height:calc(1.05*var(--u));width:calc(var(--p,0)*100%);
+  background:var(--y);border-radius:0 calc(1*var(--u)) calc(1*var(--u)) 0;pointer-events:none;z-index:4;transition:width .05s linear;
+  box-shadow:0 0 calc(.7*var(--u)) rgba(0,0,0,.55)}
+[data-dwell].hover{transform:scale(1.035);box-shadow:0 0 0 calc(.65*var(--u)) var(--y),0 calc(1.6*var(--u)) calc(4*var(--u)) rgba(0,0,0,.5)}
+[data-dwell].hover::after{height:calc(1.4*var(--u))}
+.qr{background:#fff;padding:calc(.55*var(--u));border-radius:calc(.6*var(--u));display:grid;place-items:center;overflow:hidden}
+.qr svg{width:100%;height:100%;display:block}
+.qr .qr-txt{font-size:calc(1.1*var(--u));color:#000;word-break:break-all;text-align:center;padding:calc(1*var(--u))}
+
+/* ---------- 開場 ---------- */
+#s-boot .boot-inner{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:88vw}
+#s-boot .brand{font-size:calc(8.6*var(--u))}
+.boot-h1{font-size:calc(5.6*var(--u));font-weight:900;margin:calc(4.5*var(--u)) 0 calc(1.4*var(--u));letter-spacing:.02em}
+.boot-h1 em{font-style:normal;color:var(--y);position:relative}
+.boot-h1 em::after{content:"";position:absolute;left:calc(-.3*var(--u));right:calc(-.3*var(--u));bottom:calc(-1.3*var(--u));height:calc(1.05*var(--u));background:var(--r);border-radius:calc(1*var(--u));z-index:-1}
+.boot-p{font-size:calc(2.6*var(--u));font-weight:700;opacity:.9;margin:0 0 calc(3.6*var(--u));line-height:1.5}
+.boot-emoji{display:flex;gap:calc(3.4*var(--u));font-size:calc(6.4*var(--u));margin-bottom:calc(4.4*var(--u))}
+.boot-emoji span{animation:floaty 3.4s ease-in-out infinite;filter:drop-shadow(0 calc(1*var(--u)) calc(1.4*var(--u)) rgba(0,0,0,.5))}
+.boot-emoji span:nth-child(2){animation-delay:-.9s}
+.boot-emoji span:nth-child(3){animation-delay:-1.8s}
+.boot-emoji span:nth-child(4){animation-delay:-2.7s}
+@keyframes floaty{50%{transform:translateY(calc(-1.6*var(--u))) rotate(5deg)}}
+.boot-btns{display:flex;gap:calc(1.6*var(--u));align-items:center}
+.boot-status{margin-top:calc(3*var(--u));font-size:calc(2.2*var(--u));font-weight:700;color:var(--y);min-height:calc(3*var(--u));line-height:1.5}
+.privacy{position:absolute;bottom:calc(2.6*var(--u));left:0;right:0;text-align:center;font-size:calc(1.7*var(--u));opacity:.55}
+.kiosk .privacy{bottom:calc(1.6*var(--u))}
+
+/* ---------- 主選單 ---------- */
+#s-menu{justify-content:space-between;padding:calc(4*var(--u)) calc(3*var(--u)) calc(2.6*var(--u))}
+.menu-head{text-align:center;flex:none}
+.menu-h1{font-size:calc(4.4*var(--u));font-weight:900;margin:calc(2.4*var(--u)) 0 calc(1.6*var(--u));text-shadow:0 calc(.5*var(--u)) 0 rgba(0,0,0,.4)}
+.menu-hint{display:inline-block;font-size:calc(2.3*var(--u));font-weight:900;background:rgba(0,0,0,.45);
+  border:calc(.3*var(--u)) solid rgba(255,255,255,.22);padding:calc(1.1*var(--u)) calc(2.8*var(--u));border-radius:calc(5*var(--u));animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.045)}}
+.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(2.4*var(--u));width:min(94vw,1640px);flex:none;margin:calc(2.6*var(--u)) 0}
+.card{background:#fff;color:var(--ink);border-radius:calc(3*var(--u));padding:calc(3.2*var(--u)) calc(1.6*var(--u)) calc(3.6*var(--u));text-align:center;
+  box-shadow:0 calc(1.3*var(--u)) 0 rgba(0,0,0,.35);border-top:calc(1.5*var(--u)) solid var(--accent);overflow:hidden;transform-origin:50% 60%}
+.card .em{font-size:calc(10.5*var(--u));line-height:1.05;filter:drop-shadow(0 calc(.8*var(--u)) 0 rgba(0,0,0,.12))}
+.card h3{font-size:calc(3.9*var(--u));font-weight:900;margin:calc(1.5*var(--u)) 0 calc(.5*var(--u));line-height:1.15;letter-spacing:-.01em}
+.card p{font-size:calc(2.05*var(--u));margin:0 0 calc(1.9*var(--u));color:#5a5a72;font-weight:700}
+.card .tag{display:inline-block;background:var(--accent);color:#14152b;font-weight:900;font-size:calc(1.9*var(--u));
+  padding:calc(.85*var(--u)) calc(1.8*var(--u));border-radius:calc(3*var(--u))}
+.card .best{margin-top:calc(1.4*var(--u));font-size:calc(1.7*var(--u));font-weight:900;color:#c22;letter-spacing:.02em}
+.menu-foot{display:flex;align-items:center;gap:calc(2.4*var(--u));flex:none;background:rgba(0,0,0,.4);
+  border:calc(.25*var(--u)) solid rgba(255,255,255,.14);border-radius:calc(2.2*var(--u));padding:calc(1.6*var(--u)) calc(2.2*var(--u))}
+.menu-foot .qr{width:calc(11*var(--u));height:calc(11*var(--u))}
+.foot-txt{font-size:calc(1.95*var(--u));line-height:1.5;font-weight:700;text-align:left}
+.foot-txt b{font-size:calc(2.4*var(--u))}
+.foot-txt span{font-size:calc(1.7*var(--u));opacity:.7;font-weight:700}
+.foot-count{margin-left:calc(2.4*var(--u));padding-left:calc(2.4*var(--u));border-left:calc(.2*var(--u)) solid rgba(255,255,255,.2);
+  font-size:calc(1.8*var(--u));font-weight:900;color:var(--y);text-align:center;line-height:1.4;white-space:nowrap}
+
+/* ---------- 遊戲通用 ---------- */
+.g-head{position:absolute;top:calc(2.4*var(--u));left:0;right:0;text-align:center;z-index:3;pointer-events:none}
+.g-title{font-size:calc(4.6*var(--u));font-weight:900;text-shadow:0 calc(.5*var(--u)) 0 rgba(0,0,0,.45);letter-spacing:.01em}
+.g-sub{font-size:calc(2.3*var(--u));font-weight:800;margin-top:calc(.7*var(--u));text-shadow:0 calc(.3*var(--u)) calc(.7*var(--u)) #000;opacity:.95}
+.g-sub b{color:var(--y)}
+.hud{position:absolute;top:calc(2.2*var(--u));left:calc(3*var(--u));right:calc(3*var(--u));display:flex;align-items:center;gap:calc(3*var(--u));z-index:3;font-weight:900}
+.hud-l{font-size:calc(4.2*var(--u));min-width:calc(20*var(--u));text-shadow:0 calc(.4*var(--u)) 0 rgba(0,0,0,.4)}
+.hud-c{flex:1}
+.hud-r{font-size:calc(2.2*var(--u));background:rgba(0,0,0,.5);padding:calc(1*var(--u)) calc(2*var(--u));border-radius:calc(2*var(--u));color:var(--y);white-space:nowrap}
+.timebar{width:100%;height:calc(1.9*var(--u));background:rgba(255,255,255,.2);border-radius:calc(2*var(--u));overflow:hidden}
+.timebar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--r),var(--y));transition:width .12s linear}
+.timebar.wide{width:62vw;margin:calc(1.4*var(--u)) auto 0}
+.center-msg{text-align:center;background:rgba(10,12,35,.78);padding:calc(4*var(--u)) calc(7*var(--u));border-radius:calc(4*var(--u));
+  border:calc(.3*var(--u)) solid rgba(255,255,255,.14);backdrop-filter:blur(8px);max-width:92vw}
+.center-msg.overlay{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%)}
+.cm-s{font-size:calc(2.6*var(--u));font-weight:800;line-height:1.5}
+.cm-nem{font-size:calc(4.8*var(--u));font-weight:900;color:var(--y);margin:calc(1*var(--u)) 0;line-height:1.2}
+.cm-big{font-size:calc(18*var(--u));font-weight:900;line-height:1.15;text-shadow:0 calc(1*var(--u)) 0 var(--r);animation:pop .45s}
+@keyframes pop{from{transform:scale(2.4);opacity:0}}
+
+/* 擊碎爛工：揀宿敵 */
+.mine-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(2.2*var(--u));width:min(92vw,1520px);margin-top:calc(10*var(--u));z-index:3}
+.mine{background:rgba(255,255,255,.96);color:var(--ink);border-radius:calc(2.4*var(--u));padding:calc(3.4*var(--u)) calc(1.4*var(--u)) calc(3.8*var(--u));
+  text-align:center;font-weight:900;font-size:calc(2.9*var(--u));line-height:1.2;overflow:hidden;border-bottom:calc(.9*var(--u)) solid var(--r)}
+.mine .em{font-size:calc(8.6*var(--u));line-height:1.15}
+
+/* 擊碎爛工：遊戲 */
+.arena{position:absolute;inset:0;z-index:2}
+.target{position:absolute;border-radius:calc(2.4*var(--u));background:linear-gradient(160deg,#ff7a85,#d91e3a);
+  border:calc(.55*var(--u)) solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;font-weight:900;color:#fff;box-shadow:0 calc(1.2*var(--u)) 0 #7d1022,0 0 calc(4*var(--u)) rgba(255,77,94,.5);
+  animation:popin .26s cubic-bezier(.2,1.7,.4,1);overflow:hidden;cursor:pointer;z-index:2}
+.target .em{font-size:calc(6.6*var(--u));line-height:1.05}
+.target .lbl{font-size:calc(2.3*var(--u));padding:0 calc(1*var(--u));line-height:1.18;text-shadow:0 calc(.3*var(--u)) 0 rgba(0,0,0,.35)}
+.target .life{position:absolute;left:0;bottom:0;height:calc(.85*var(--u));width:100%;background:rgba(255,255,255,.9);
+  transform-origin:left;animation:lifebar linear forwards}
+@keyframes lifebar{to{transform:scaleX(0)}}
+.target.nem{background:linear-gradient(160deg,#ffe066,#ff9f1c);color:#3b1a00;
+  box-shadow:0 calc(1.2*var(--u)) 0 #8a4a00,0 0 calc(6*var(--u)) rgba(255,210,63,.95);overflow:visible}
+.target.nem::before{content:"宿敵 ×3";position:absolute;top:calc(-2.9*var(--u));left:50%;transform:translateX(-50%);
+  background:#000;color:var(--y);font-size:calc(1.8*var(--u));padding:calc(.4*var(--u)) calc(1.3*var(--u));border-radius:calc(1.2*var(--u));white-space:nowrap}
+.target.hit{animation:smash .6s ease-in forwards;pointer-events:none}
+.target.gone{animation:gone .3s forwards;pointer-events:none}
+@keyframes popin{from{transform:scale(0) rotate(-25deg)}}
+@keyframes smash{0%{transform:scale(1.22)}100%{transform:translate(var(--fx,20vw),-42vh) rotate(var(--fr,300deg)) scale(.45);opacity:0}}
+@keyframes gone{to{transform:scale(0);opacity:0}}
+.combo{position:absolute;right:calc(4*var(--u));top:calc(12*var(--u));font-size:calc(5.4*var(--u));font-weight:900;color:var(--y);
+  text-shadow:0 calc(.6*var(--u)) 0 var(--r);z-index:3;opacity:0;pointer-events:none}
+.combo.pulse{animation:combo .9s}
+@keyframes combo{0%{opacity:1;transform:scale(1.7)}70%{opacity:1;transform:scale(1)}100%{opacity:0}}
+
+/* 熱身校準 */
+.cal-wrap{display:flex;flex-direction:column;align-items:center;text-align:center}
+.cal-nem{font-size:calc(2.6*var(--u));font-weight:800;line-height:1.5;margin-bottom:calc(2.4*var(--u))}
+.cal-nem b{font-size:calc(4.2*var(--u));display:block;margin-top:calc(.8*var(--u))}
+.cal-ring{position:relative;width:calc(26*var(--u));height:calc(26*var(--u));display:grid;place-items:center}
+.cal-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cal-ring .trk{fill:none;stroke:rgba(255,255,255,.18);stroke-width:5}
+.cal-ring .fg{fill:none;stroke:var(--y);stroke-width:6;stroke-linecap:round}
+.cal-n{font-size:calc(11*var(--u));font-weight:900;line-height:1;text-shadow:0 calc(.7*var(--u)) 0 rgba(0,0,0,.35)}
+.cal-tip{font-size:calc(2.3*var(--u));font-weight:800;margin-top:calc(2.4*var(--u));line-height:1.6}
+.cal-tip span{display:block;font-size:calc(1.9*var(--u));opacity:.7;margin-top:calc(.5*var(--u))}
+
+/* 黃大仙 */
+.temple-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 118%,rgba(200,16,46,.6),transparent 62%);pointer-events:none;z-index:1}
+.pray-box{position:relative;width:calc(30*var(--u));height:calc(30*var(--u));margin-top:calc(3*var(--u));z-index:2}
+.ring{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:rgba(0,0,0,.4);stroke:rgba(255,255,255,.18);stroke-width:5}
+.ring-fg{fill:none;stroke:var(--y);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.pray-em{position:absolute;inset:0;display:grid;place-items:center;font-size:calc(13*var(--u))}
+.big-s{font-size:calc(3.6*var(--u));font-weight:900;margin:calc(2.6*var(--u)) 0 calc(.8*var(--u));text-shadow:0 calc(.4*var(--u)) 0 rgba(0,0,0,.4);z-index:2}
+.mid-s{font-size:calc(2.2*var(--u));opacity:.85;margin-bottom:calc(2.4*var(--u));z-index:2}
+.meter{width:48vw;height:calc(2.6*var(--u));margin:calc(1.4*var(--u)) auto 0;background:rgba(0,0,0,.45);border:calc(.35*var(--u)) solid var(--y);
+  border-radius:calc(2*var(--u));overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--y) 0 calc(2*var(--u)),#ffb703 calc(2*var(--u)) calc(4*var(--u)));transition:width .1s linear}
+.tube{position:absolute;left:0;top:0;width:calc(19*var(--u));height:calc(36*var(--u));transform-origin:50% 78%;will-change:transform;
+  filter:drop-shadow(0 calc(2*var(--u)) calc(2*var(--u)) rgba(0,0,0,.55));z-index:3}
+.fly-stick{position:absolute;left:0;top:0;width:calc(4.6*var(--u));height:calc(32*var(--u));background:linear-gradient(90deg,#d9b25f,#f3d58e,#d9b25f);
+  border:calc(.3*var(--u)) solid #a5792c;border-radius:calc(1*var(--u));border-top:calc(3.6*var(--u)) solid #d62839;display:flex;align-items:center;
+  justify-content:center;writing-mode:vertical-rl;font-weight:900;font-size:calc(2.6*var(--u));color:#7a0618;z-index:4;
+  box-shadow:0 calc(1*var(--u)) calc(3*var(--u)) rgba(0,0,0,.5)}
+.draw-hint{position:absolute;bottom:calc(4*var(--u));left:0;right:0;text-align:center;font-size:calc(2*var(--u));font-weight:800;opacity:.65;z-index:2}
+
+/* 二選一 */
+.vs-wrap{position:relative;display:flex;gap:calc(2.2*var(--u));width:min(94vw,1700px);height:60vh;margin-top:calc(9*var(--u));align-items:stretch;z-index:2}
+.opt{flex:1;border-radius:calc(3*var(--u));display:flex;align-items:center;justify-content:center;text-align:center;
+  font-weight:900;padding:calc(3*var(--u));overflow:hidden;border:calc(.55*var(--u)) solid rgba(255,255,255,.55)}
+.optA{background:linear-gradient(160deg,rgba(255,107,120,.94),rgba(190,18,48,.94))}
+.optB{background:linear-gradient(160deg,rgba(70,220,205,.94),rgba(16,120,150,.94))}
+.opt .lab{display:inline-block;width:calc(8*var(--u));height:calc(8*var(--u));line-height:calc(8*var(--u));border-radius:50%;background:#fff;
+  color:var(--ink);font-size:calc(4.4*var(--u));margin-bottom:calc(2*var(--u))}
+.opt .txt{font-size:calc(4.1*var(--u));line-height:1.32;text-shadow:0 calc(.4*var(--u)) 0 rgba(0,0,0,.25)}
+.opt .hand-hint{font-size:calc(2*var(--u));opacity:.85;margin-top:calc(2*var(--u))}
+.opt.chosen{transform:scale(1.02);box-shadow:0 0 0 calc(1*var(--u)) #fff,0 0 calc(7*var(--u)) rgba(255,255,255,.55)}
+.opt.dim{opacity:.28;filter:grayscale(.65)}
+.opt .stat{font-size:calc(2.3*var(--u));margin-top:calc(2.2*var(--u));background:rgba(0,0,0,.4);border-radius:calc(1.6*var(--u));padding:calc(1.2*var(--u)) calc(2.2*var(--u));animation:pop .4s}
+.vs{align-self:center;font-size:calc(7*var(--u));font-weight:900;color:var(--y);text-shadow:0 calc(.7*var(--u)) 0 var(--r);flex:none}
+.timeout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-4deg);background:var(--ink);
+  border:calc(.55*var(--u)) solid var(--y);padding:calc(2.6*var(--u)) calc(4.6*var(--u));border-radius:calc(3*var(--u));font-size:calc(4.4*var(--u));font-weight:900;
+  animation:pop .4s;white-space:nowrap;z-index:5}
+
+/* 扭蛋 */
+.gacha-row{display:flex;align-items:center;justify-content:center;gap:calc(6*var(--u));margin-top:calc(4*var(--u));z-index:2}
+.gacha{position:relative;width:calc(42*var(--u));height:calc(66*var(--u));flex:none}
+.dome{position:absolute;left:calc(3*var(--u));right:calc(3*var(--u));top:0;height:calc(33*var(--u));border-radius:50% 50% 6% 6%/58% 58% 6% 6%;
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.6),rgba(255,255,255,.12) 35%,rgba(170,215,255,.16));
+  border:calc(.75*var(--u)) solid rgba(255,255,255,.75);overflow:hidden}
+.dome .cap{position:absolute;width:calc(7.6*var(--u));height:calc(7.6*var(--u));border-radius:50%;border:calc(.3*var(--u)) solid rgba(0,0,0,.18);
+  background:linear-gradient(var(--c) 50%,#fff 50%)}
+.dome.shake .cap{animation:rattle .15s infinite alternate}
+@keyframes rattle{to{transform:translate(calc(.6*var(--u)),calc(-.8*var(--u))) rotate(12deg)}}
+.gbody{position:absolute;left:0;right:0;top:calc(31*var(--u));bottom:0;background:linear-gradient(#ff5d6c,#c81d3a);
+  border-radius:calc(3*var(--u)) calc(3*var(--u)) calc(4*var(--u)) calc(4*var(--u));box-shadow:inset 0 calc(-2*var(--u)) 0 rgba(0,0,0,.2),0 calc(2*var(--u)) calc(4*var(--u)) rgba(0,0,0,.45)}
+.glabel{position:absolute;top:calc(1.4*var(--u));left:0;right:0;text-align:center;font-weight:900;font-size:calc(2.6*var(--u))}
+.crank{position:absolute;left:50%;top:calc(6.8*var(--u));width:calc(15*var(--u));height:calc(15*var(--u));margin-left:calc(-7.5*var(--u));border-radius:50%;
+  background:conic-gradient(var(--y) calc(var(--p,0)*360deg),rgba(255,255,255,.22) 0);display:grid;place-items:center}
+.crank.active{box-shadow:0 0 0 calc(.6*var(--u)) #fff,0 0 calc(4.6*var(--u)) var(--y)}
+.knob{width:calc(11.6*var(--u));height:calc(11.6*var(--u));border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#d8d8e0);
+  box-shadow:0 calc(.8*var(--u)) 0 rgba(0,0,0,.3);position:relative}
+.knob::before{content:"";position:absolute;left:50%;top:calc(.7*var(--u));width:calc(2.6*var(--u));height:calc(10.2*var(--u));margin-left:calc(-1.3*var(--u));
+  background:linear-gradient(90deg,#b9b9c6,#fff,#b9b9c6);border-radius:calc(1.4*var(--u));box-shadow:0 calc(.3*var(--u)) calc(.6*var(--u)) rgba(0,0,0,.25)}
+.orbit{position:absolute;left:50%;top:50%;width:0;height:0;animation:orbit 1.8s linear infinite;pointer-events:none}
+.orbit::after{content:"👋";position:absolute;font-size:calc(5.4*var(--u));transform:translate(calc(10*var(--u)),-50%)}
+.crank.active .orbit{display:none}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.chute{position:absolute;bottom:calc(2.6*var(--u));left:50%;width:calc(13.6*var(--u));height:calc(8*var(--u));margin-left:calc(-6.8*var(--u));background:#2a0a14;
+  border-radius:calc(2*var(--u));box-shadow:inset 0 calc(1*var(--u)) calc(1.6*var(--u)) rgba(0,0,0,.6)}
+.gacha-hint{width:calc(44*var(--u));text-align:center}
+.gh-big{font-size:calc(3.2*var(--u));font-weight:900;line-height:1.45}
+.turnbar{height:calc(2.6*var(--u));background:rgba(0,0,0,.45);border:calc(.35*var(--u)) solid var(--y);border-radius:calc(2*var(--u));overflow:hidden;margin:calc(2.4*var(--u)) 0 calc(1*var(--u))}
+.turnbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p),var(--y));transition:width .1s linear}
+.gh-s{font-size:calc(2*var(--u));font-weight:800;margin-top:calc(1*var(--u));opacity:.9}
+.big-cap{position:absolute;width:calc(23*var(--u));height:calc(23*var(--u));z-index:4;transform:translate(-50%,-50%);cursor:pointer}
+.big-cap::after{display:none}
+.big-cap .half{position:absolute;left:0;width:100%;height:50%;border:calc(.45*var(--u)) solid rgba(0,0,0,.2);
+  transition:transform .5s cubic-bezier(.3,1.5,.5,1),opacity .5s}
+.big-cap .half.top{top:0;border-radius:calc(11.5*var(--u)) calc(11.5*var(--u)) 0 0;background:var(--c);border-bottom:calc(.7*var(--u)) solid rgba(0,0,0,.15)}
+.big-cap .half.bot{bottom:0;border-radius:0 0 calc(11.5*var(--u)) calc(11.5*var(--u));background:#fff}
+.big-cap.gold .half.top{background:linear-gradient(135deg,#fff3b0,#ffcc00 40%,#c99700 70%,#fff3b0)}
+.big-cap.gold .half.bot{background:linear-gradient(135deg,#ffe680,#e6b400)}
+.big-cap.gold{filter:drop-shadow(0 0 calc(3.6*var(--u)) #ffd23f)}
+.big-cap.wobble{animation:wobble .6s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:translate(-50%,-50%) rotate(-8deg)}50%{transform:translate(-50%,-50%) rotate(8deg)}}
+.big-cap.open{animation:none}
+.big-cap.open .top{transform:translateY(-95%) rotate(-35deg);opacity:0}
+.big-cap.open .bot{transform:translateY(95%) rotate(25deg);opacity:0}
+.big-cap .cap-ring{position:absolute;inset:calc(-1.8*var(--u));border-radius:50%;border:calc(.7*var(--u)) solid rgba(255,255,255,.25);
+  background:conic-gradient(rgba(255,210,63,.9) calc(var(--p,0)*360deg),transparent 0);
+  -webkit-mask:radial-gradient(circle,transparent 61%,#000 62%);mask:radial-gradient(circle,transparent 61%,#000 62%)}
+
+/* ---------- 結果畫面 ---------- */
+.result-wrap{display:flex;align-items:center;justify-content:center;gap:calc(5*var(--u));width:100%;height:100%}
+.res-side{width:min(40vw,640px);display:flex;flex-direction:column;gap:calc(2*var(--u))}
+.res-kicker{display:inline-block;align-self:flex-start;background:var(--y);color:var(--ink);font-weight:900;
+  font-size:calc(1.7*var(--u));padding:calc(.6*var(--u)) calc(1.6*var(--u));border-radius:calc(1*var(--u));transform:rotate(-2deg)}
+.res-title{font-size:calc(4.4*var(--u));font-weight:900;color:#fff;line-height:1.15;margin:calc(.6*var(--u)) 0 0;text-shadow:0 calc(.5*var(--u)) 0 rgba(0,0,0,.4)}
+.res-sub{font-size:calc(2.1*var(--u));font-weight:700;opacity:.9;line-height:1.5;margin:0}
+.pitch{font-size:calc(2.2*var(--u));font-weight:800;background:rgba(255,255,255,.1);border-left:calc(.9*var(--u)) solid var(--y);
+  padding:calc(1.4*var(--u)) calc(2*var(--u));border-radius:calc(1*var(--u));line-height:1.5;margin:calc(.6*var(--u)) 0}
+.scan-box{display:flex;align-items:center;gap:calc(2*var(--u));background:#fff;color:var(--ink);border-radius:calc(2*var(--u));
+  padding:calc(1.6*var(--u)) calc(2*var(--u));box-shadow:0 calc(.8*var(--u)) 0 rgba(0,0,0,.3)}
+.scan-box .qr{width:calc(13*var(--u));height:calc(13*var(--u));flex:none;background:#fff}
+.scan-t{font-size:calc(2.2*var(--u));font-weight:900;line-height:1.35}
+.scan-s{font-size:calc(1.7*var(--u));font-weight:700;color:#555;line-height:1.4;margin-top:calc(.5*var(--u))}
+.stamp-row{display:flex;align-items:center;gap:calc(2*var(--u))}
+.stamp{flex:none;width:calc(14*var(--u));height:calc(14*var(--u));border:calc(.7*var(--u)) double #ff6b78;color:#ff6b78;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:calc(2*var(--u));
+  background:rgba(255,255,255,.95);animation:stampIn .5s .5s both cubic-bezier(.2,2,.4,1);line-height:1.2}
+.stamp .st-b{font-size:calc(3.1*var(--u))}
+@keyframes stampIn{from{transform:scale(3) rotate(-14deg);opacity:0}to{transform:scale(1) rotate(-14deg);opacity:1}}
+.stamp-txt{font-size:calc(2*var(--u));font-weight:800;line-height:1.45}
+.res-btns{display:flex;gap:calc(1.6*var(--u))}
+.res-btns .btn{flex:1}
+.res-timer{font-size:calc(1.7*var(--u));opacity:.6;font-weight:700;text-align:right}
+
+/* ---------- 打卡卡（9:16） ---------- */
+.story{position:relative;height:78vh;aspect-ratio:9/16;flex:none;border-radius:calc(2.4*var(--u));overflow:hidden;
+  background:var(--paper);color:var(--ink);display:flex;flex-direction:column;padding:1.6em 1.7em;
+  font-size:2.3vh;box-shadow:0 calc(3*var(--u)) calc(8*var(--u)) rgba(0,0,0,.6),0 0 0 calc(.3*var(--u)) rgba(255,255,255,.16);
+  animation:cardIn .65s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes cardIn{from{transform:translateY(8vh) rotate(-3deg) scale(.8);opacity:0}}
+.story .st-top{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:.82em;letter-spacing:.02em}
+.story .st-brand{color:#d62246;font-size:1.15em}
+.story .st-mini{background:#14152b;color:#FFD23F;padding:.25em .7em;border-radius:2em;font-size:.72em}
+.story .st-kicker{font-size:.72em;font-weight:800;letter-spacing:.16em;opacity:.6;margin-top:1.4em}
+.story .st-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:.5em}
+.story .st-foot{display:flex;justify-content:space-between;align-items:center;font-size:.62em;font-weight:800;
+  opacity:.55;border-top:.18em solid currentColor;padding-top:.9em;letter-spacing:.05em}
+.story .st-url{font-size:1.05em;opacity:.9}
+
+/* 擊碎卡 */
+.story.smash{background:linear-gradient(165deg,#1b1f45,#0c0e24 60%);color:#fff}
+.story.smash .st-brand{color:var(--y)}
+.story.smash .st-mini{background:var(--r);color:#fff}
+.story.smash .st-score{font-size:5.6em;font-weight:900;line-height:.9;color:#fff;text-shadow:0 .04em 0 var(--r);letter-spacing:-.03em}
+.story.smash .st-score i{font-style:normal;font-size:.24em;margin-left:.2em;opacity:.7}
+.story.smash .st-rank{background:var(--y);color:var(--ink);font-weight:900;font-size:1.25em;padding:.25em 1em;border-radius:2em;transform:rotate(-1.5deg)}
+.story.smash .st-line{font-size:.82em;line-height:1.7;font-weight:700;margin-top:.8em;opacity:.92}
+.story.smash .st-line b{color:var(--y);font-size:1.5em}
+.story.smash .st-quote{font-size:.78em;font-weight:800;color:var(--y);margin-top:1.2em;line-height:1.6}
+.story.smash .st-foot{border-color:rgba(255,255,255,.3)}
+
+/* 黃大仙卡 */
+.story.fortune{background:linear-gradient(#fffaf0,#ffe8b0);border:.5em solid #c8102e;padding:1.2em;
+  box-shadow:inset 0 0 0 .18em #FFD23F,0 calc(3*var(--u)) calc(8*var(--u)) rgba(0,0,0,.6)}
+.story.fortune .st-brand{color:#c8102e}
+.story.fortune .st-mini{background:#c8102e;color:#FFD23F}
+.story.fortune .st-lv{display:inline-block;background:#c8102e;color:#FFD23F;font-weight:900;font-size:1.35em;
+  padding:.2em 1em;border-radius:.3em;letter-spacing:.1em}
+.story.fortune .st-lv.mid{background:#e07a00;color:#fff}
+.story.fortune .st-lv.bad{background:#3d3d4e;color:#e5e5e5}
+.story.fortune .st-name{font-size:2.7em;font-weight:900;line-height:1.15;color:#5a0f0f}
+.story.fortune .st-poem{font-size:1.05em;font-weight:900;line-height:1.75;color:#5a0f0f;margin:.3em 0}
+.story.fortune .st-exp{font-size:.7em;font-weight:700;color:#7a3b00;border-top:.15em dashed #c8102e;padding-top:.9em;line-height:1.55}
+.story.fortune .st-foot{color:#a3122a;opacity:.8;border-color:#c8102e}
+
+/* 職業卡 */
+.story.job{background:linear-gradient(165deg,#fff,#ffeef6);border:.35em solid var(--p)}
+.story.job.gold{background:linear-gradient(160deg,#fffbe0,#ffe27a 45%,#fff3b0);border-color:#c99700}
+.story.job .st-tag{display:inline-block;background:var(--ink);color:var(--y);font-weight:900;font-size:.72em;
+  padding:.35em 1.1em;border-radius:2em;letter-spacing:.12em}
+.story.job .st-em{font-size:5.4em;line-height:1}
+.story.job .st-name{font-size:2.1em;font-weight:900;line-height:1.2}
+.story.job .st-quote{font-size:.9em;font-weight:700;color:#444;line-height:1.6;margin-top:.4em}
+.story.job .st-gift{font-size:.76em;font-weight:900;background:var(--y);color:var(--ink);padding:.45em 1em;border-radius:.6em;margin-top:.8em}
+
+/* 屬性卡 */
+.story.trait{background:linear-gradient(165deg,#fff,#f3f0ff)}
+.story.trait .st-sticker{width:7.6em;height:7.6em;border-radius:50%;background:var(--sc);border:.14em solid #fff;
+  box-shadow:0 .2em .6em rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  margin:.2em auto .5em;transform:rotate(-5deg)}
+.story.trait .st-em{font-size:2.9em;line-height:1}
+.story.trait .st-sn{font-size:.72em;font-weight:900;line-height:1.1;padding:0 .2em}
+.story.trait .st-name{font-size:2.1em;font-weight:900;line-height:1.15}
+.story.trait .st-slogan{font-size:.8em;font-weight:700;color:#555;line-height:1.5}
+.story.trait .st-picks{font-size:.66em;font-weight:700;color:#666;line-height:1.7;margin-top:.8em;text-align:left;width:100%;border-top:.15em dashed #bbb;padding-top:.8em}
+
+/* ---------- 手機打卡頁 ---------- */
+#s-phone{background:radial-gradient(circle at 50% 0,#1c2050,#080a18 70%);justify-content:flex-start;padding:calc(2.4*var(--u)) calc(3*var(--u));gap:calc(1.8*var(--u));overflow-y:auto}
+.phone-head{display:flex;align-items:center;gap:calc(1.4*var(--u));font-weight:900;font-size:calc(4.4*var(--u))}
+.phone-head .rp{color:var(--y)}
+.phone-head span{background:var(--r);font-size:.4em;padding:.35em .9em;border-radius:1em;transform:rotate(-3deg)}
+#s-phone .story{width:min(82vw,44vh);height:auto;aspect-ratio:9/16;font-size:2.05vh;align-self:center;animation:cardIn .6s both}
+.phone-btns{display:flex;gap:calc(1.6*var(--u));width:min(82vw,44vh);align-self:center}
+.phone-btns .btn{flex:1;min-width:0;font-size:calc(3*var(--u));padding:calc(2.2*var(--u)) calc(.6*var(--u));border-radius:calc(1.6*var(--u));white-space:nowrap}
+.phone-note{font-size:calc(2.6*var(--u));opacity:.6;font-weight:700;text-align:center;line-height:1.5;padding:0 6vw calc(3*var(--u))}
+
+/* ---------- HUD / 雜項 ---------- */
+.status{position:fixed;left:calc(1.6*var(--u));bottom:calc(1.2*var(--u));z-index:41;font-size:calc(1.5*var(--u));opacity:.5;pointer-events:none;font-weight:700}
+.toast{position:fixed;left:50%;top:calc(2.6*var(--u));transform:translateX(-50%) translateY(-120%);z-index:50;
+  background:rgba(0,0,0,.82);border:calc(.2*var(--u)) solid rgba(255,255,255,.18);padding:calc(1.2*var(--u)) calc(2.8*var(--u));border-radius:calc(3*var(--u));
+  font-size:calc(2*var(--u));font-weight:800;opacity:0;transition:transform .3s cubic-bezier(.2,1.4,.4,1),opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.idle-hint{position:absolute;top:29.5vh;left:50%;translate:-50% 0;text-align:center;font-size:calc(2.3*var(--u));font-weight:900;
+  opacity:0;transition:opacity .5s;pointer-events:none;z-index:3;white-space:nowrap;
+  background:rgba(8,10,24,.7);border:calc(.25*var(--u)) solid rgba(255,255,255,.18);padding:calc(1.2*var(--u)) calc(2.8*var(--u));border-radius:calc(5*var(--u))}
+.idle-hint.show{opacity:1;animation:pulse 1.6s infinite}
+.fatal{position:fixed;inset:0;z-index:60;background:rgba(8,10,24,.96);display:none;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:calc(6*var(--u));gap:calc(2.4*var(--u))}
+.fatal.show{display:flex}
+.fatal h2{font-size:calc(4*var(--u));margin:0}
+.fatal p{font-size:calc(2.4*var(--u));opacity:.8;line-height:1.6;max-width:70vw;margin:0}
+.kiosk .status,.kiosk .staff-keys{display:none}
+
+/* ---------- 員工設定 ---------- */
+.staff{position:fixed;inset:0;z-index:40;background:rgba(4,6,16,.86);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;padding:calc(3*var(--u))}
+.staff.show{display:flex}
+.staff-inner{width:min(1200px,94vw);max-height:92vh;overflow:auto;background:#131735;border:calc(.3*var(--u)) solid rgba(255,255,255,.15);
+  border-radius:calc(2.4*var(--u));padding:calc(3*var(--u)) calc(3.4*var(--u));box-shadow:0 calc(3*var(--u)) calc(8*var(--u)) rgba(0,0,0,.6)}
+.staff-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:calc(2.4*var(--u))}
+.staff-head b{font-size:calc(3*var(--u));color:#fff}
+.staff-head span{font-size:calc(1.8*var(--u));opacity:.6;font-weight:700}
+.staff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:calc(2.4*var(--u))}
+.staff-grid section{background:rgba(255,255,255,.05);border-radius:calc(1.8*var(--u));padding:calc(2*var(--u)) calc(2.2*var(--u))}
+.staff-grid h4{margin:0 0 calc(1.4*var(--u));font-size:calc(2*var(--u));color:var(--y);letter-spacing:.08em}
+.staff-grid label{display:flex;align-items:center;gap:calc(1*var(--u));font-size:calc(1.8*var(--u));font-weight:700;margin:calc(.9*var(--u)) 0}
+.staff-grid select{flex:1;background:#0c0f26;color:#fff;border:calc(.2*var(--u)) solid rgba(255,255,255,.25);
+  border-radius:calc(.8*var(--u));padding:calc(.8*var(--u));font-size:calc(1.7*var(--u));font-family:inherit}
+.staff-grid input[type=range]{flex:1;accent-color:var(--y)}
+.staff-grid output{font-size:calc(1.7*var(--u));min-width:calc(7*var(--u));text-align:right;color:var(--y);font-weight:900}
+.staff-grid .chk{gap:calc(.9*var(--u))}
+.staff-grid .chk input{accent-color:var(--y);width:calc(2*var(--u));height:calc(2*var(--u))}
+.staff-row{display:flex;gap:calc(1.2*var(--u));margin-top:calc(1.4*var(--u));flex-wrap:wrap}
+.staff-row button{background:#fff;color:var(--ink);border:0;border-radius:calc(1*var(--u));font-weight:900;font-size:calc(1.7*var(--u));
+  padding:calc(1*var(--u)) calc(1.8*var(--u));cursor:pointer;font-family:inherit}
+.staff-row button.ghost{background:rgba(255,255,255,.1);color:#fff;border:calc(.2*var(--u)) solid rgba(255,255,255,.25)}
+.staff-note{font-size:calc(1.55*var(--u));line-height:1.6;opacity:.6;margin:calc(1.2*var(--u)) 0 0;font-weight:700}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(1.2*var(--u));margin-bottom:calc(.6*var(--u))}
+.stat-cell{background:rgba(0,0,0,.3);border-radius:calc(1*var(--u));padding:calc(1*var(--u));text-align:center}
+.stat-cell b{display:block;font-size:calc(2.6*var(--u));color:var(--y);line-height:1.2}
+.stat-cell span{font-size:calc(1.45*var(--u));opacity:.75;font-weight:700}
+
+/* ---------- 手機玩家模式（掃碼用自己手機玩） ---------- */
+.inapp{display:none;margin-top:calc(2*var(--u));background:var(--r);color:#fff;padding:calc(1.4*var(--u)) calc(2.4*var(--u));border-radius:calc(1.6*var(--u));font-size:calc(2.3*var(--u));font-weight:700;text-align:center;line-height:1.5}
+.inapp.on{display:block}
+.menu-foot .foot-txt b.play{color:var(--y)}
+body.phone .menu-foot,body.phone .staff-keys,body.phone .status{display:none}
+body.phone .res-timer{display:none}
+@media (orientation:portrait){
+  body.phone{--u:min(1.6vw,.9vh)}
+  body.phone .menu-grid{gap:calc(1.6*var(--u))}
+  body.phone .mine-grid{grid-template-columns:repeat(2,1fr);margin-top:calc(16*var(--u))}
+  body.phone .vs-wrap{height:64vh;margin-top:calc(16*var(--u));gap:calc(1.2*var(--u))}
+  body.phone .result-wrap{justify-content:flex-start;overflow-y:auto;padding:calc(2*var(--u)) 0}
+  body.phone .story{height:auto;width:84vw;flex:none}
+  body.phone .res-side{width:88vw}
+  body.phone .gacha-row{margin-top:calc(12*var(--u))}
+  body.phone .boot-btns{flex-direction:column;align-items:stretch;width:80vw;margin:0 auto}
+  body.phone .opt{padding:calc(1.6*var(--u))}
+  body.phone .opt .txt{font-size:calc(3.2*var(--u));line-height:1.35}
+  body.phone .vs{font-size:calc(5*var(--u))}
+}
+/* ---------- 直向（手機） ---------- */
+@media (orientation:portrait){
+  .menu-grid{grid-template-columns:repeat(2,1fr)}
+  .mine-grid{grid-template-columns:repeat(4,1fr)}
+  .result-wrap{flex-direction:column;gap:calc(2*var(--u))}
+  .story{height:62vh}
+  .res-side{width:88vw}
+  .vs-wrap{height:56vh}
+  .gacha-row{flex-direction:column;gap:calc(2*var(--u))}
+  .staff-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="bg"></canvas>
+<canvas id="fx"></canvas>
+
+<!-- ================= 開場／工作人員設定 ================= -->
+<div id="s-boot" class="screen active">
+  <div class="boot-inner">
+    <div class="brand"><span class="rp">RightPick</span><span class="sub">職場遊樂場</span></div>
+    <h1 class="boot-h1">行埋嚟，<em>舉手</em>就玩</h1>
+    <p class="boot-p">4 個 30 秒職場小遊戲<br>用手勢打爆你最憎嘅職場地雷</p>
+    <div class="boot-emoji"><span>🎯</span><span>🏮</span><span>⚖️</span><span>🎁</span></div>
+    <div class="boot-btns">
+      <button id="btn-start" class="btn big">▶ 開始遊戲</button>
+      <button id="btn-mouse" class="btn ghost">冇鏡頭？滑鼠／觸控</button>
+    </div>
+    <div id="boot-status" class="boot-status"></div>
+    <div class="inapp" id="inapp">⚠️ 你似乎喺 App 內置瀏覽器打開，鏡頭可能用唔到。<br>請撳右上角「⋯」揀「用 Safari／Chrome 打開」</div>
+  </div>
+  <div class="privacy">🔒 鏡頭只用作即時手勢偵測，唔會錄影、唔會上傳、唔會儲存影像。</div>
+</div>
+
+<!-- ================= 主選單 ================= -->
+<div id="s-menu" class="screen">
+  <div class="menu-head">
+    <div class="brand"><span class="rp">RightPick</span><span class="sub">職場遊樂場</span></div>
+    <div class="menu-h1">邊個職場地雷，你最想打爆？</div>
+    <div class="menu-hint" id="menu-hint">👋 舉起手掌，停喺想玩嘅遊戲上面 1 秒</div>
+  </div>
+  <div class="menu-grid">
+    <div class="card" data-dwell="1.1" data-game="smash" style="--accent:#FF4D5E">
+      <div class="em">🎯</div><h3>擊碎爛工</h3><p>打工仔避坑射擊場</p>
+      <span class="tag">揮手打爆職場地雷</span><div class="best" id="best-smash"></div>
+    </div>
+    <div class="card" data-dwell="1.1" data-game="fortune" style="--accent:#FFD23F">
+      <div class="em">🏮</div><h3>職場黃大仙</h3><p>命運求籤檔</p>
+      <span class="tag">合十搖籤求好工</span>
+    </div>
+    <div class="card" data-dwell="1.1" data-game="choice" style="--accent:#2EC4B6">
+      <div class="em">⚖️</div><h3>職場不可能三角</h3><p>極速二選一挑戰</p>
+      <span class="tag">舉手揀邊・即刻睇結果</span>
+    </div>
+    <div class="card" data-dwell="1.1" data-game="gacha" style="--accent:#FF6FB5">
+      <div class="em">🎁</div><h3>開箱 Dream Job</h3><p>盲盒扭蛋機</p>
+      <span class="tag">打圈扭出命定職業</span>
+    </div>
+  </div>
+  <div class="menu-foot">
+    <div class="qr" id="menu-qr"></div>
+    <div class="foot-txt"><b>RightPick</b>　真實公司評價・搵工避坑<br><span>免費玩・完成挑戰即場蓋印</span></div>
+    <div class="foot-count" id="foot-count"></div>
+  </div>
+  <div class="idle-hint" id="idle-hint">☝️ 過嚟揮揮手，開始玩！</div>
+</div>
+
+<!-- ================= 遊戲 / 結果 / 手機卡 ================= -->
+<div id="s-game" class="screen"></div>
+<div id="s-result" class="screen"></div>
+<div id="s-phone" class="screen"></div>
+
+<div class="toast" id="toast"></div>
+<div class="status" id="status"></div>
+
+<div class="staff" id="staff"></div>
+<div class="fatal" id="fatal">
+  <h2>⚠️ 載入出錯</h2>
+  <p id="fatal-msg">請按 F5 或重新開機。如果持續出現，請影低呢個畫面俾技術同事。</p>
+  <button class="btn" onclick="location.reload()">重新載入</button>
+</div>
+
+<script>/* qrcode-generator (MIT, Kazuhiko Arase) */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script type="module">
+/* =========================================================================
+   RightPick 職場遊樂場 — Exhibition Edition
+   -------------------------------------------------------------------------
+   運作方式：大螢幕 + webcam，玩家行埋嚟舉手就玩，唔需要手機或電腦。
+   所有函式庫（MediaPipe 手勢模型、QR Code）都已放在 assets/，可離線運作。
+   ========================================================================= */
+
+/* ============================ 1. 設定 ============================ */
+const CONFIG = {
+  brand: 'RightPick',
+  webUrl: 'https://rightpick.online/',     // QR Code 目標（改成正式網址）
+  webLabel: 'rightpick.online',            // 卡上面顯示嘅網址文字
+  shareBase: '',
+  playUrl: '',           // 大螢幕「掃碼用手機玩」QR 網址；留空＝自動用目前網址（localhost 時改為顯示官網）                           // 進階：留空＝自動用目前網址；localhost/file 會自動停用逐人 QR
+  smashSeconds: 20,      // 擊碎爛工：每局秒數
+  choiceRounds: 3,       // 不可能三角：每局題數
+  choiceSeconds: 5,      // 不可能三角：每題限時
+  shakeTarget: 2.6,      // 黃大仙：搖籤所需移動量（畫面高度倍數）
+  gachaTurns: 2,         // 扭蛋：要扭幾個圈
+  goldRate: 0.10,        // 扭蛋：金蛋機率
+  resultTimeout: 30,     // 結果畫面自動返回主頁秒數
+  idleSeconds: 70,       // 遊戲中幾耐冇手就返主頁
+  minHandSize: 0.075,    // 手掌最細尺寸（畫面高度比例），過濾背景路人
+  hitSpeed: 0.55,        // 揮手命中所需速度（畫面高度／秒）
+  prayDist: 0.24,        // 雙手合十判定距離
+  mirror: true,          // 鏡像畫面（自拍模式）
+  sound: true,
+};
+
+/* ============================ 2. 內容 ============================ */
+const MINES = [
+  {e:'🌙', t:'無限無償 OT'},
+  {e:'📱', t:'星期日晚響 WhatsApp'},
+  {e:'🥮', t:'畫大餅老細'},
+  {e:'🤹', t:'身兼五職得萬二'},
+  {e:'🔍', t:'Micro-management'},
+  {e:'🏆', t:'功勞俾人攞'},
+  {e:'🏖️', t:'放假都要覆 Email'},
+  {e:'📉', t:'人工三年冇加'},
+];
+const SHOUTS = ['唔做喇！','拜拜老細！','走先！','自由啦！','Bye OT！','避坑成功！'];
+
+const FORTUNES = [
+  {lv:'good', level:'上上籤', name:'神仙工', poem:['年年雙糧，老細放手，','同事唔搞事，準時六點走。'], exp:'此籤大吉！神仙工要靠揀唔係靠拜，入 {brand} 睇清楚公司評價先落決定。'},
+  {lv:'good', level:'上上籤', name:'升職加薪', poem:['伯樂喺身邊，花紅雙倍派，','年尾升一級，人工跳兩格。'], exp:'貴人運旺，宜主動爭取，忌默默做嘢等人發現。'},
+  {lv:'good', level:'上吉籤', name:'WFH 之神', poem:['鏡頭唔使開，梳化變辦公室，','通勤時間全部用嚟瞓覺。'], exp:'宜揀彈性工作嘅公司，面試記得問清楚 WFH 政策。'},
+  {lv:'mid',  level:'中吉籤', name:'貴人運', poem:['新老細識欣賞，前輩肯教路，','今年學嘢最快，經驗值爆燈。'], exp:'宜跟對老細，學到嘢比人工高少少更重要。'},
+  {lv:'mid',  level:'中吉籤', name:'摸魚達人', poem:['會唔使開，工唔多做，','鍵盤敲得響，人工袋袋平安。'], exp:'表面平安，小心溫水煮蛙，記得持續增值。'},
+  {lv:'mid',  level:'中平籤', name:'騎牛搵馬', poem:['份工唔好唔差，市場暗湧處處，','留定後路，機會自然嚟。'], exp:'宜騎牛搵馬，忌衝動辭職，先睇清市場行情。'},
+  {lv:'mid',  level:'中平籤', name:'斜槓人生', poem:['正職準時走，下班搞副業，','兩份收入一齊袋。'], exp:'精力充沛，宜發展副業，但記得同正職保持界線。'},
+  {lv:'mid',  level:'小吉籤', name:'佛系打工', poem:['不爭不搶不內捲，','五點五十九，收拾好準備閃。'], exp:'心態健康，宜揀重視 Work-Life Balance 嘅公司。'},
+  {lv:'bad',  level:'下籤', name:'會議地獄', poem:['一日開七個會，會後再開會，','正經嘢留返夜晚先做。'], exp:'宜學識講「呢個 Email 講得晒」，忌每個會都應承。'},
+  {lv:'bad',  level:'下下籤', name:'工具人', poem:['PPT 改廿版，功勞人哋攞，','聽日即刻遞信保平安。'], exp:'此籤大凶！宜即刻更新 CV，用 {brand} 搵返個識欣賞你嘅地方。'},
+  {lv:'bad',  level:'下下籤', name:'畫餅大師', poem:['老細話明年上市，期權餅大過天，','人工三年冇郁過。'], exp:'餅食唔飽，宜睇清合約同真實人工，唔好淨信口頭承諾。'},
+  {lv:'bad',  level:'下下籤', name:'24/7 待命', poem:['半夜兩點有 call，放假都要覆 Email，','手機永遠唔敢靜音。'], exp:'揀公司前先問清楚 on-call 文化，健康緊要過一切。'},
+];
+
+const QUESTIONS = [
+  {id:'q1', a:{t:'月薪 4 萬\n但日日 OT 到半夜', k:'MONEY'}, b:{t:'月薪 2 萬\n準時收工有 WFH', k:'WLB'}},
+  {id:'q2', a:{t:'超好人但\n完全無能力嘅老細', k:'WLB'}, b:{t:'好 Mean 但\n超勁帶你飛嘅老細', k:'GROWTH'}},
+  {id:'q3', a:{t:'穩定大公司\n嘅螺絲釘', k:'STABLE'}, b:{t:'每日救火但\n發揮空間大嘅 Startup', k:'GROWTH'}},
+  {id:'q4', a:{t:'每年加薪 10%\n但份工好悶', k:'MONEY'}, b:{t:'人工唔郁\n但做緊自己鍾意嘅嘢', k:'GROWTH'}},
+  {id:'q5', a:{t:'同事超 Nice\n但公司隨時執笠', k:'WLB'}, b:{t:'公司穩如泰山\n但同事好毒', k:'STABLE'}},
+  {id:'q6', a:{t:'Title 好勁\n但完全冇實權', k:'STABLE'}, b:{t:'冇 Title\n但老細好信你', k:'GROWTH'}},
+  {id:'q7', a:{t:'鐵飯碗\n做到退休', k:'STABLE'}, b:{t:'高薪但\n三年後唔知點', k:'MONEY'}},
+];
+const TRAITS = {
+  WLB:    {name:'WLB 捍衛者',   e:'🛡️', c:'#2EC4B6', s:'準時收工係基本人權'},
+  MONEY:  {name:'野心搞錢人',   e:'💰', c:'#FFD23F', s:'人工先係最真實嘅讚美'},
+  GROWTH: {name:'成長型冒險家', e:'🚀', c:'#FF6FB5', s:'邊度學到嘢就去邊度'},
+  STABLE: {name:'佛系生存大師', e:'🧘', c:'#b3a8ff', s:'穩穩陣陣，長命工夫長命做'},
+  BALANCE:{name:'平衡大師',     e:'⚖️', c:'#8be28b', s:'乜都想要？慢慢比較先揀'},
+  NONE:   {name:'選擇困難症',   e:'🤯', c:'#ff9f1c', s:'唔緊要，等 RightPick 幫你比較'},
+};
+const JOBS = [
+  {e:'🤖', n:'AI 馴獸師', q:'AI 唔聽話？再 prompt 多次就得。'},
+  {e:'🫶', n:'情緒價值提供者', q:'我嘅 KPI 係同事嘅笑容。'},
+  {e:'🗺️', n:'隱世生活策劃師', q:'幫人規劃人生，自己準時收工。'},
+  {e:'🧪', n:'Excel 煉金術士', q:'一條 VLOOKUP 救返成個部門。'},
+  {e:'⏱️', n:'會議濃縮大師', q:'一個鐘嘅會，五分鐘講完。'},
+  {e:'🏝️', n:'數碼遊牧民族', q:'Wi-Fi 喺邊，辦公室就喺邊。'},
+  {e:'🐞', n:'Bug 終結者', q:'捉晒啲 bug，準時食下午茶。'},
+  {e:'📱', n:'爆款 Reel 製造機', q:'一條片帶旺成間公司。'},
+  {e:'🌱', n:'地球打工仔', q:'幫地球返工，順手幫公司攞 ESG 獎。'},
+  {e:'🎮', n:'元宇宙建築師', q:'喺虛擬世界起樓，唔使供樓。'},
+  {e:'🧭', n:'人生 Debug 顧問', q:'你嘅迷惘，就係我嘅專業。'},
+  {e:'🍵', n:'Team 精神支柱', q:'有我喺度，成隊都唔會散。'},
+];
+const GOLD_JOBS = [
+  {e:'👑', n:'理想神工', q:'雙糧＋花紅＋WFH＋好老細，全部集齊！'},
+  {e:'🌈', n:'夢想職人', q:'做自己鍾意嘅嘢，仲有好人工收。'},
+];
+const CAP_COLORS = ['#FF4D5E','#2EC4B6','#FF6FB5','#9b8cff','#4dabf7','#ff9f1c','#7bd389'];
+
+/* ============================ 3. 小工具 ============================ */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const FONT = '"Noto Sans HK","PingFang HK","Microsoft JhengHei",sans-serif';
+const pick = a => a[(Math.random()*a.length)|0];
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const brand = s => String(s).replace(/\{brand\}/g, CONFIG.brand);
+const br = s => String(s).replace(/\n/g,'<br>');
+const params = new URLSearchParams(location.search);
+const isKiosk = params.get('kiosk') === '1';
+if (isKiosk) document.body.classList.add('kiosk');
+/* ---- 手機玩家模式：遊客掃大螢幕 QR，用自己手機前鏡頭玩 ---- */
+const IS_PHONE = !isKiosk && ((matchMedia('(pointer:coarse)').matches && Math.min(screen.width,screen.height)<900) || /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent));
+const IN_APP = /Instagram|FBAN|FBAV|Line\/|MicroMessenger|WhatsApp|Messenger|Threads/i.test(navigator.userAgent);
+if (IS_PHONE) document.body.classList.add('phone');
+const motion={on:false,shake:0};
+function enableMotion(){
+  const listen=()=>{ if(motion.on) return; motion.on=true; addEventListener('devicemotion',e=>{
+    let m; const a=e.acceleration;
+    if(a && a.x!=null) m=Math.hypot(a.x,a.y,a.z);
+    else { const g=e.accelerationIncludingGravity; if(!g||g.x==null) return; m=Math.abs(Math.hypot(g.x,g.y,g.z)-9.8); }
+    motion.shake=Math.max(motion.shake,m);
+  }); };
+  try{
+    if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function')
+      DeviceMotionEvent.requestPermission().then(r=>{ if(r==='granted') listen(); }).catch(()=>{});
+    else if(typeof DeviceMotionEvent!=='undefined') listen();
+  }catch(e){}
+}
+const nowMs = () => performance.now();
+
+function cnNum(n){
+  const d='零一二三四五六七八九';
+  if(n<10) return d[n];
+  if(n===10) return '十';
+  if(n<20) return '十'+d[n%10];
+  const t=Math.floor(n/10), o=n%10;
+  return d[t]+'十'+(o?d[o]:'');
+}
+let timers=[];
+const later=(fn,ms)=>{const id=setTimeout(fn,ms);timers.push(id);return id;};
+const clearTimers=()=>{timers.forEach(clearTimeout);timers=[];};
+
+let toastT=0;
+function toast(msg,ms=2400){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+function fatal(msg){
+  $('#fatal-msg').textContent = msg || '請按 F5 重新載入。';
+  $('#fatal').classList.add('show');
+}
+
+/* ============================ 4. 音效（WebAudio，無外部檔案） ============================ */
+let AC=null;
+function audioInit(){
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended') AC.resume();
+  }catch(e){}
+}
+function tone(f,d=.12,type='sine',v=.18,f2=null,delay=0){
+  if(!AC||!CFG.sound) return;
+  const t=AC.currentTime+delay; const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+d);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t+d+.03);
+}
+function noise(d=.15,v=.3,freq=800,type='lowpass'){
+  if(!AC||!CFG.sound) return;
+  const len=Math.max(1,Math.floor(AC.sampleRate*d)); const b=AC.createBuffer(1,len,AC.sampleRate);
+  const ch=b.getChannelData(0);
+  for(let i=0;i<len;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const s=AC.createBufferSource(); s.buffer=b;
+  const f=AC.createBiquadFilter(); f.type=type; f.frequency.value=freq;
+  const g=AC.createGain(); g.gain.value=v;
+  s.connect(f).connect(g).connect(AC.destination); s.start();
+}
+const sfx = {
+  select(){tone(660,.08,'square',.1);tone(990,.14,'square',.1,null,.08);},
+  hit(){noise(.22,.5,500);tone(220,.18,'sawtooth',.18,50);},
+  clack(){tone(1500+Math.random()*500,.035,'square',.07);noise(.04,.2,2500,'highpass');},
+  tick(){tone(1800,.025,'square',.05);},
+  pop(){tone(300,.18,'sine',.3,1400);noise(.1,.25,3000,'highpass');},
+  win(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.22,'triangle',.18,null,i*.09));},
+  beep(){tone(880,.12,'sine',.16);},
+  go(){tone(1320,.3,'sine',.2);},
+  whoosh(){noise(.5,.25,1200,'bandpass');},
+  buzz(){tone(140,.35,'sawtooth',.14,90);},
+  drop(){[0,1,2,3].forEach(i=>tone(500-i*80,.06,'square',.08,null,i*.07));},
+};
+
+/* ============================ 5. 統計（localStorage） ============================ */
+const Stats = {
+  KEY:'rp_arcade_stats_v2',
+  d:{day:'',plays:{},done:{},choices:{},golds:0,best:{}},
+  dayKey(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  },
+  load(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(this.KEY)||'null');
+      if(raw && raw.day) this.d=raw;
+    }catch(e){}
+    this.today();
+  },
+  save(){ try{ localStorage.setItem(this.KEY,JSON.stringify(this.d)); }catch(e){} },
+  today(){
+    const k=this.dayKey();
+    if(this.d.day!==k){ this.d={day:k,plays:{},done:{},choices:{},golds:0,best:{}}; this.save(); }
+    return this.d;
+  },
+  play(g){ const d=this.today(); d.plays[g]=(d.plays[g]||0)+1; this.save(); },
+  done(g){ const d=this.today(); d.done[g]=(d.done[g]||0)+1; this.save(); },
+  gold(){ const d=this.today(); d.golds++; this.save(); },
+  bestScore(game,score){
+    const d=this.today();
+    if(!d.best[game] || score>d.best[game]){ d.best[game]=score; this.save(); }
+  },
+  choice(qid,side){
+    const d=this.today();
+    const r=d.choices[qid]||{a:0,b:0}; r[side]++; d.choices[qid]=r; this.save();
+    const total=r.a+r.b;
+    return {pct:Math.round(r[side]/total*100), total};
+  },
+  totalPlayers(){
+    const d=this.today();
+    return Object.values(d.done||{}).reduce((a,b)=>a+b,0);
+  },
+  csv(){
+    const d=this.today();
+    const games=['smash','fortune','choice','gacha'];
+    const names={smash:'擊碎爛工',fortune:'職場黃大仙',choice:'不可能三角',gacha:'Dream Job 扭蛋'};
+    let s='日期,遊戲,開始次數,完成次數,今日最高分\n';
+    games.forEach(g=>{ s+=`${d.day},${names[g]},${d.plays[g]||0},${d.done[g]||0},${g==='smash'?(d.best.smash||0):''}\n`; });
+    s+=`${d.day},金蛋次數,${d.golds||0},,\n`;
+    s+='\n題目,A,B\n';
+    Object.keys(d.choices).forEach(q=>{ s+=`${q},${d.choices[q].a},${d.choices[q].b}\n`; });
+    return s;
+  }
+};
+Stats.load();
+
+/* ============================ 6. 設定讀寫 ============================ */
+const CFG = Object.assign({}, CONFIG);
+(function loadCfg(){
+  try{
+    const s=JSON.parse(localStorage.getItem('rp_arcade_cfg_v1')||'{}');
+    ['minHandSize','hitSpeed','mirror','sound','resultTimeout','idleSeconds'].forEach(k=>{
+      if(s[k]!==undefined) CFG[k]=s[k];
+    });
+  }catch(e){}
+})();
+function saveCfg(){
+  try{
+    localStorage.setItem('rp_arcade_cfg_v1',JSON.stringify({
+      minHandSize:CFG.minHandSize, hitSpeed:CFG.hitSpeed, mirror:CFG.mirror,
+      sound:CFG.sound, resultTimeout:CFG.resultTimeout, idleSeconds:CFG.idleSeconds
+    }));
+  }catch(e){}
+}
+
+/* ============================ 7. 畫布／粒子 ============================ */
+const video=$('#cam'), bg=$('#bg'), fx=$('#fx');
+const bgc=bg.getContext('2d',{alpha:false}), fxc=fx.getContext('2d');
+const VIEW={w:innerWidth,h:innerHeight};
+
+function resize(){
+  VIEW.w=innerWidth; VIEW.h=innerHeight;
+  const bs=Math.min(1,1920/Math.max(1,innerWidth));
+  bg.width=Math.round(innerWidth*bs); bg.height=Math.round(innerHeight*bs);
+  bgc.setTransform(bs,0,0,bs,0,0);
+  const fs=Math.min(1,1600/Math.max(1,innerWidth));
+  fx.width=Math.round(innerWidth*fs); fx.height=Math.round(innerHeight*fs);
+  fxc.setTransform(fs,0,0,fs,0,0);
+}
+addEventListener('resize',resize); resize();
+
+const parts=[];
+function burst(x,y,n,colors,pow=1){
+  const h=innerHeight;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, s=(.25+Math.random())*h*.9*pow;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-h*.35,g:h*1.8,life:1,dec:.8+Math.random()*.8,
+      size:h*(.01+Math.random()*.014),color:colors[i%colors.length],rot:Math.random()*6,
+      vr:(Math.random()-.5)*14,sq:Math.random()<.6});
+  }
+}
+function floatText(x,y,text,color='#fff',scale=1){
+  parts.push({x,y,vx:0,vy:-innerHeight*.28,g:0,life:1,dec:.85,text,color,size:innerHeight*.055*scale});
+}
+function confetti(n=160){
+  const w=innerWidth,h=innerHeight;
+  const cols=['#FFD23F','#FF4D5E','#2EC4B6','#FF6FB5','#fff','#9b8cff'];
+  for(let i=0;i<n;i++) parts.push({x:Math.random()*w,y:-Math.random()*h*.4,
+    vx:(Math.random()-.5)*w*.15,vy:h*(.15+Math.random()*.3),g:h*.25,life:1,dec:.22+Math.random()*.15,
+    size:h*(.012+Math.random()*.01),color:pick(cols),rot:Math.random()*6,vr:(Math.random()-.5)*10,sq:true});
+}
+function drawParts(c,dt){
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i]; p.life-=p.dec*dt;
+    if(p.life<=0){parts.splice(i,1);continue;}
+    p.vy+=p.g*dt; p.vx*=Math.pow(.4,dt); p.x+=p.vx*dt; p.y+=p.vy*dt;
+    c.globalAlpha=Math.min(1,p.life*1.6);
+    if(p.text){
+      c.font=`900 ${p.size}px ${FONT}`; c.textAlign='center'; c.textBaseline='middle';
+      c.lineWidth=p.size*.16; c.strokeStyle='rgba(0,0,0,.65)';
+      c.strokeText(p.text,p.x,p.y); c.fillStyle=p.color; c.fillText(p.text,p.x,p.y);
+    }else{
+      p.rot+=p.vr*dt; c.save(); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.color;
+      if(p.sq) c.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+      else {c.beginPath();c.arc(0,0,p.size/2,0,7);c.fill();}
+      c.restore();
+    }
+  }
+  c.globalAlpha=1;
+}
+
+/* ============================ 8. 鏡頭管理 ============================ */
+const Cam = {
+  stream:null, ready:false, deviceId:null, retry:0, retryTimer:null,
+  supported(){ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); },
+  async devices(){
+    try{
+      const ds=await navigator.mediaDevices.enumerateDevices();
+      return ds.filter(d=>d.kind==='videoinput');
+    }catch(e){ return []; }
+  },
+  stop(){
+    if(this.stream){ this.stream.getTracks().forEach(t=>{try{t.stop();}catch(e){}}); }
+    this.stream=null; this.ready=false;
+  },
+  async start(deviceId){
+    if(!this.supported()) throw new Error('瀏覽器唔支援鏡頭');
+    this.stop();
+    const base=IS_PHONE ? {width:{ideal:640},height:{ideal:480},frameRate:{ideal:30,max:30}}
+                        : {width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}};
+    const video_ = deviceId ? Object.assign({deviceId:{exact:deviceId}},base)
+                            : Object.assign({facingMode:'user'},base);
+    const stream=await navigator.mediaDevices.getUserMedia({video:video_,audio:false});
+    video.srcObject=stream;
+    try{ await video.play(); }catch(e){}
+    this.stream=stream; this.ready=true; this.retry=0;
+    const track=stream.getVideoTracks()[0];
+    if(track) track.addEventListener('ended',()=>this.lost());
+    return stream;
+  },
+  lost(){
+    if(!Cam.ready) return;
+    Cam.ready=false;
+    toast('⚠️ 鏡頭斷線，正在重新連接…',4000);
+    Cam.scheduleRetry();
+  },
+  scheduleRetry(){
+    clearTimeout(this.retryTimer);
+    this.retryTimer=setTimeout(async ()=>{
+      if(mode!=='camera') return;
+      if(++Cam.retry>20){ toast('鏡頭連唔到，請工作人員檢查 USB',6000); return; }
+      try{ await Cam.start(Cam.deviceId); toast('✅ 鏡頭已重新連接'); }
+      catch(e){ Cam.scheduleRetry(); }
+    },1500);
+  }
+};
+
+function camGeom(){
+  const w=VIEW.w,h=VIEW.h,vw=video.videoWidth||1280,vh=video.videoHeight||720;
+  const sc=Math.max(w/vw,h/vh), dw=vw*sc, dh=vh*sc;
+  return {w,h,dw,dh,dx:(w-dw)/2,dy:(h-dh)/2};
+}
+
+/* ============================ 9. 手勢追蹤 ============================ */
+let mode='none';            // 'camera' | 'mouse' | 'none'
+let tracker=null, trackerLoading=false, trackerFailed=false;
+let lastVT=-1, lastDetT=nowMs();
+let hands=[];
+let lastHandSeen=nowMs();
+let showSkel=false;
+
+async function loadTracker(){
+  if(tracker) return tracker;
+  if(trackerLoading) return null;
+  trackerLoading=true;
+  const V='0.10.14';
+  let vision=null, wasmPath=null, modelPath=null;
+
+  // 先試本地 assets（可離線）；失敗先用 CDN
+  try{
+    vision=await import(new URL('assets/mediapipe/vision_bundle.js',location.href).href);
+    wasmPath=new URL('assets/mediapipe/wasm/',location.href).href;
+    modelPath=new URL('assets/mediapipe/hand_landmarker.task',location.href).href;
+  }catch(e){
+    console.warn('本地 MediaPipe 載入失敗，改用 CDN',e);
+    vision=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
+    wasmPath=`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`;
+    modelPath='https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+  }
+  const files=await vision.FilesetResolver.forVisionTasks(wasmPath);
+  const opts=d=>({
+    baseOptions:{modelAssetPath:modelPath, delegate:d},
+    runningMode:'VIDEO', numHands:2,
+    minHandDetectionConfidence:.5, minHandPresenceConfidence:.5, minTrackingConfidence:.5
+  });
+  try{ tracker=await vision.HandLandmarker.createFromOptions(files,opts('GPU')); }
+  catch(e){
+    console.warn('GPU 失敗，改用 CPU',e);
+    tracker=await vision.HandLandmarker.createFromOptions(files,opts('CPU'));
+  }
+  trackerLoading=false;
+  return tracker;
+}
+
+let nextId=1;
+function processDetections(res,now){
+  const g=camGeom(), H=g.h;
+  const map=p=>({x: CFG.mirror ? g.w-(g.dx+p.x*g.dw) : g.dx+p.x*g.dw, y: g.dy+p.y*g.dh});
+  const cands=(res.landmarks||[]).map(l=>{
+    const pts=l.map(map);
+    let cx=0,cy=0;
+    [0,5,9,13,17].forEach(i=>{cx+=pts[i].x;cy+=pts[i].y;});
+    return {cx:cx/5,cy:cy/5,size:Math.hypot(pts[0].x-pts[9].x,pts[0].y-pts[9].y),pts};
+  }).filter(c=>c.size>=CFG.minHandSize*H).sort((a,b)=>b.size-a.size).slice(0,2);
+
+  const dt=clamp((now-lastDetT)/1000,.01,.2); lastDetT=now;
+  const used=new Set(), out=[];
+  for(const c of cands){
+    let best=null,bd=1e9;
+    for(const h of hands){
+      if(used.has(h)) continue;
+      const d=Math.hypot(h.rx-c.cx,h.ry-c.cy);
+      if(d<bd){bd=d;best=h;}
+    }
+    if(best && bd<H*.4){
+      used.add(best);
+      const nx=best.x+(c.cx-best.x)*.7, ny=best.y+(c.cy-best.y)*.7;
+      best.vx=best.vx*.35+((nx-best.x)/dt)*.65;
+      best.vy=best.vy*.35+((ny-best.y)/dt)*.65;
+      Object.assign(best,{x:nx,y:ny,rx:c.cx,ry:c.cy,pts:c.pts,size:c.size,lost:0});
+      out.push(best);
+    }else{
+      out.push({id:nextId++,x:c.cx,y:c.cy,rx:c.cx,ry:c.cy,vx:0,vy:0,pts:c.pts,size:c.size,lost:0});
+    }
+  }
+  for(const h of hands){
+    if(!used.has(h)){ h.lost+=dt; if(h.lost<.25){ h.vx*=.5; h.vy*=.5; h.speed=Math.hypot(h.vx,h.vy); out.push(h); } }
+  }
+  hands=out;
+  for(const h of hands){ h.speed=Math.hypot(h.vx,h.vy); h.r=H*.045; }
+  if(hands.length) lastHandSeen=now;
+}
+
+/* 滑鼠 / 觸控後備 */
+const ptr={x:0,y:0,px:0,py:0,vx:0,vy:0,on:false,touch:false};
+addEventListener('pointermove',e=>{ptr.x=e.clientX;ptr.y=e.clientY;if(e.pointerType==='mouse')ptr.on=true;});
+addEventListener('pointerdown',e=>{ptr.x=ptr.px=e.clientX;ptr.y=ptr.py=e.clientY;ptr.on=true;ptr.touch=e.pointerType!=='mouse';audioInit();});
+addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')ptr.on=false;});
+document.addEventListener('mouseleave',()=>{ptr.on=false;});
+function updateMouseHand(dt){
+  const vx=(ptr.x-ptr.px)/Math.max(dt,.001), vy=(ptr.y-ptr.py)/Math.max(dt,.001);
+  ptr.vx=ptr.vx*.5+vx*.5; ptr.vy=ptr.vy*.5+vy*.5;
+  ptr.px=ptr.x; ptr.py=ptr.y;
+  hands = ptr.on ? [{id:0,x:ptr.x,y:ptr.y,vx:ptr.vx,vy:ptr.vy,speed:Math.hypot(ptr.vx,ptr.vy),
+    lost:0,r:innerHeight*.03,mouse:true}] : [];
+  if(hands.length) lastHandSeen=nowMs();
+}
+const liveHands=()=>hands.filter(h=>!h.lost);
+const primaryHand=()=>{
+  const hs=liveHands();
+  if(!hs.length) return null;
+  return hs.slice().sort((a,b)=>(b.size||0)-(a.size||0))[0];
+};
+
+const CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
+  [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function drawHands(c){
+  const main=primaryHand();
+  hands.forEach(h=>{
+    const isMain = h===main;
+    const col = isMain ? '#FFD23F' : '#2EC4B6';
+    c.globalAlpha=h.lost?.35:1;
+    if(showSkel && h.pts){
+      c.strokeStyle='rgba(255,255,255,.55)'; c.lineWidth=3; c.beginPath();
+      for(const [a,b] of CONN){c.moveTo(h.pts[a].x,h.pts[a].y);c.lineTo(h.pts[b].x,h.pts[b].y);}
+      c.stroke();
+    }
+    const r=(h.r||innerHeight*.045)*(isMain?1.1:.85);
+    c.beginPath(); c.arc(h.x,h.y,r,0,Math.PI*2); c.fillStyle=col+'33'; c.fill();
+    c.lineWidth=isMain?5:3; c.strokeStyle=col; c.stroke();
+    c.beginPath(); c.arc(h.x,h.y,r*.2,0,Math.PI*2); c.fillStyle=col; c.fill();
+    if(isMain){
+      c.beginPath(); c.arc(h.x,h.y,r*1.55,0,Math.PI*2);
+      c.strokeStyle=col+'55'; c.lineWidth=2; c.stroke();
+    }
+  });
+  c.globalAlpha=1;
+}
+
+/* ============================ 10. 停留選擇 ============================ */
+let dwellLock=0;
+function resetDwell(){
+  $$('[data-dwell]').forEach(el=>{el._d=0; el.style.setProperty('--p',0); el.classList.remove('hover');});
+  dwellLock=nowMs()+700;
+}
+function updateDwell(dt){
+  if(mode==='none') return;
+  const now=nowMs();
+  const pts=liveHands();
+  $$('.screen.active [data-dwell]').forEach(el=>{
+    const r=el.getBoundingClientRect();
+    const inside = now>dwellLock && pts.some(p=>p.x>=r.left&&p.x<=r.right&&p.y>=r.top&&p.y<=r.bottom);
+    const need=parseFloat(el.dataset.dwell)||1.2;
+    let v=el._d||0;
+    v = inside ? v+dt/need : Math.max(0,v-dt*2/need);
+    if(inside && !el.classList.contains('hover')) sfx.tick();
+    el.classList.toggle('hover',inside);
+    el._d=v; el.style.setProperty('--p',Math.min(1,v));
+    if(v>=1){ el._d=0; el.style.setProperty('--p',0); el.click(); }
+  });
+}
+
+/* ============================ 11. 畫面切換 ============================ */
+const App={screen:'boot', current:null, idle:0};
+
+function show(id){
+  $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  resetDwell();
+}
+function goMenu(){
+  clearTimers();
+  App.current=null; App.screen='menu';
+  show('s-menu');
+  resetDwell();
+  refreshMenuMeta();
+}
+function gameRoot(){
+  const r=$('#s-game');
+  r.innerHTML='';
+  App.screen='game';
+  show('s-game');
+  return r;
+}
+function startGame(name){
+  if(mode==='none'){ toast('請先開始鏡頭或滑鼠模式'); return; }
+  clearTimers();
+  audioInit();
+  sfx.go();
+  Stats.play(name);
+  const ctor={smash:SmashGame,fortune:FortuneGame,choice:ChoiceGame,gacha:GachaGame}[name];
+  if(!ctor) return;
+  App.current=ctor();
+  App.current.name=name;
+  resetDwell();
+}
+function endGame(){
+  Stats.done(App.current ? App.current.name : 'smash');
+  goMenu();
+}
+function refreshMenuMeta(){
+  const best=Stats.today().best||{};
+  const b=$('#best-smash');
+  if(b) b.textContent = best.smash ? `今日最高 ${best.smash} 分` : '';
+  const fc=$('#foot-count');
+  if(fc){
+    const n=Stats.totalPlayers();
+    fc.innerHTML = n ? `今日已有<br><b>${n}</b> 人挑戰` : '今日<br>做第一個';
+  }
+}
+
+/* ============================ 12. 結果畫面 ============================ */
+function showResult(o){
+  clearTimers();
+  if(App.current && App.current.name) Stats.done(App.current.name);
+  App.current=null; App.screen='result';
+  refreshMenuMeta();
+  const code=o.shareCode||'';
+  const shareUrl=buildShareUrl(code);
+  const r=$('#s-result');
+  r.innerHTML=`
+    <div class="result-wrap">
+      <div class="story-host">${o.card}</div>
+      <aside class="res-side">
+        <div class="res-kicker">挑戰完成 ✓</div>
+        <h2 class="res-title">${o.title}</h2>
+        ${o.sub?`<p class="res-sub">${o.sub}</p>`:''}
+        <div class="pitch">${brand(o.pitch)}</div>
+        ${IS_PHONE?`<div class="scan-box"><div style="font-size:calc(5*var(--u))">📸</div><div><div class="scan-t">截圖呢張卡</div><div class="scan-s">放上 IG Story，話俾朋友知你避開咗邊個職場地雷</div></div></div>`:`<div class="scan-box">
+          <div class="qr" id="res-qr"></div>
+          <div>
+            <div class="scan-t">${shareUrl.perPlayer?'掃 QR 攞返你張卡':'掃 QR 睇真實行情'}</div>
+            <div class="scan-s">${shareUrl.perPlayer?'用手機打開，截圖／分享上 IG Story':'RightPick 真實公司評價・搵工避坑'}</div>
+          </div>
+        </div>`}
+        <div class="stamp-row">
+          <div class="stamp"><div>RightPick</div><div class="st-b">過關 ✓</div></div>
+          <div class="stamp-txt">${IS_PHONE?'✅ 將呢個畫面<br>俾攤位職員睇，即可蓋印':'✅ 記得向工作人員<br>出示呢個畫面蓋印'}</div>
+        </div>
+        <div class="res-btns">
+          <div class="btn" data-dwell="1.4" id="b-again">🔁 再玩</div>
+          <div class="btn ghost" data-dwell="1.4" id="b-home">🏠 主頁</div>
+        </div>
+        <div class="res-timer">自動返回主頁 <b id="rtimer">${CFG.resultTimeout}</b> 秒</div>
+      </aside>
+    </div>`;
+  show('s-result');
+  if(o.gold) confetti(220);
+  const qrEl=$('#res-qr'); if(qrEl) qrInto(qrEl,shareUrl.url);
+  $('#b-again').onclick=()=>{sfx.select();startGame(o.replay);};
+  $('#b-home').onclick=()=>{sfx.select();goMenu();};
+  let n=IS_PHONE?99999:CFG.resultTimeout;   // 手機係玩家自己部機：唔自動跳走，等佢截圖
+  const tick=()=>{
+    const el=$('#rtimer'); if(el) el.textContent=n;
+    if(n--<=0){ goMenu(); return; }
+    later(tick,1000);
+  };
+  tick();
+}
+
+/* ============================ 13. QR Code ============================ */
+function qrInto(el,text){
+  el.innerHTML='';
+  try{
+    const q=qrcode(0,'M'); q.addData(text); q.make();
+    el.innerHTML=q.createSvgTag({cellSize:4,margin:1,scalable:true});
+  }catch(e){
+    const d=document.createElement('div');
+    d.className='qr-txt'; d.textContent=text;
+    el.appendChild(d);
+  }
+}
+const isLocalHost = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname) || location.protocol==='file:';
+function buildShareUrl(code){
+  const base = CONFIG.shareBase || (isLocalHost ? '' : location.origin+location.pathname);
+  if(base && code) return {url: base+'#r='+code, perPlayer:true};
+  return {url: CONFIG.webUrl, perPlayer:false};
+}
+
+/* ============================ 14. 打卡卡 ============================ */
+const Cards = {
+  foot(tag){
+    return `<div class="st-foot"><span class="st-url">${CONFIG.webLabel}</span><span>${tag}</span></div>`;
+  },
+  smash(p){
+    return `<div class="story smash">
+      <div class="st-top"><span class="st-brand">${CONFIG.brand}</span><span class="st-mini">職場遊樂場</span></div>
+      <div class="st-body">
+        <div class="st-kicker">擊碎爛工・避坑成績表</div>
+        <div class="st-score">${p.score}<i>分</i></div>
+        <div class="st-rank">${p.rank}</div>
+        <div class="st-line">宿敵：${p.nem.e} ${p.nem.t}<br>打爆咗 <b>${p.hits}</b> 個職場地雷</div>
+        <div class="st-quote">「老細唔會消失，<br>但你可以揀第二個。」</div>
+      </div>
+      ${this.foot('#避開伏工')}
+    </div>`;
+  },
+  fortune(f,no){
+    return `<div class="story fortune">
+      <div class="st-top"><span class="st-brand">${CONFIG.brand}</span><span class="st-mini">職場黃大仙</span></div>
+      <div class="st-body">
+        <div class="st-kicker">第 ${cnNum(no)} 籤</div>
+        <div class="st-lv ${f.lv==='mid'?'mid':f.lv==='bad'?'bad':''}">${f.level}</div>
+        <div class="st-name">${f.name}</div>
+        <div class="st-poem">${f.poem.join('<br>')}</div>
+        <div class="st-exp">解曰：${brand(f.exp)}</div>
+      </div>
+      ${this.foot('#職場黃大仙')}
+    </div>`;
+  },
+  job(job,gold){
+    return `<div class="story job ${gold?'gold':''}">
+      <div class="st-top"><span class="st-brand">${CONFIG.brand}</span><span class="st-mini">Dream Job</span></div>
+      <div class="st-body">
+        <div class="st-kicker">${gold?'金色神工蛋':'你嘅命定職業'}</div>
+        <div class="st-em">${job.e}</div>
+        <div class="st-name">${job.n}</div>
+        <div class="st-quote">「${job.q}」</div>
+        ${gold?`<div class="st-gift">🎁 去工作人員度攞小禮物</div>`:''}
+      </div>
+      ${this.foot('#開箱DreamJob')}
+    </div>`;
+  },
+  trait(t,picks){
+    const list=(picks&&picks.length)?picks.map((x,i)=>`${i+1}. ${x}`).join('<br>'):'（時間到，冇揀到）';
+    return `<div class="story trait">
+      <div class="st-top"><span class="st-brand">${CONFIG.brand}</span><span class="st-mini">職場屬性</span></div>
+      <div class="st-body">
+        <div class="st-sticker" style="--sc:${t.c}">
+          <div class="st-em">${t.e}</div>
+          <div class="st-sn">${t.name}</div>
+        </div>
+        <div class="st-name">${t.name}</div>
+        <div class="st-slogan">${brand(t.s)}</div>
+        <div class="st-picks">你嘅選擇：<br>${list}</div>
+      </div>
+      ${this.foot('#不可能三角')}
+    </div>`;
+  }
+};
+
+/* ============================ 15. 遊戲 1：擊碎爛工 ============================ */
+function SmashGame(){
+  const root=gameRoot();
+  let phase='pick', nem=null, nemIdx=0;
+  let T=0, left=CONFIG.smashSeconds, score=0, hits=0, nemHits=0, combo=0, lastHit=-9;
+  let spawnCD=0, lastSec=99, targets=[], arena=null, box=null;
+  let calT=0, cal={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9}, calSeen=false;
+
+  root.innerHTML=`
+    <div class="g-head">
+      <div class="g-title">🎯 擊碎爛工</div>
+      <div class="g-sub">第一步：揀出你 <b>最唔可以接受</b> 嘅職場地雷 👋 手掌停喺上面</div>
+    </div>
+    <div class="mine-grid">
+      ${MINES.map((m,i)=>`<div class="mine" data-dwell="1.1" data-i="${i}">
+        <div class="em">${m.e}</div><div>${m.t}</div></div>`).join('')}
+    </div>`;
+
+  root.querySelectorAll('.mine').forEach(el=>{
+    el.addEventListener('click',()=>chooseNem(+el.dataset.i));
+  });
+
+  function chooseNem(i){
+    if(phase!=='pick') return;
+    nem=MINES[i]; nemIdx=i; phase='cal'; calT=0;
+    sfx.select();
+    root.innerHTML=`
+      <div class="g-head"><div class="g-title">🎯 擊碎爛工</div></div>
+      <div class="cal-wrap">
+        <div class="cal-nem">你嘅頭號宿敵<b>${nem.e} ${nem.t}</b></div>
+        <div class="cal-ring">
+          <svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="45"/><circle class="fg" id="cal-arc" cx="50" cy="50" r="45"/></svg>
+          <div class="cal-n" id="cal-n">3</div>
+        </div>
+        <div class="cal-tip">👋 熱身：舉起雙手，上下左右伸展<br><span>打中宿敵 ×3 分・限時 ${CONFIG.smashSeconds} 秒</span></div>
+      </div>`;
+    const arc=$('#cal-arc'); const C=2*Math.PI*45;
+    arc.style.strokeDasharray=C; arc.style.strokeDashoffset=C;
+    resetDwell();
+  }
+
+  function computeBox(){
+    const W=innerWidth,H=innerHeight;
+    let x0,x1,y0,y1;
+    if(calSeen && cal.x1>cal.x0){
+      x0=cal.x0; x1=cal.x1; y0=cal.y0; y1=cal.y1;
+    }else{
+      x0=W*.28; x1=W*.72; y0=H*.32; y1=H*.72;
+    }
+    const cx=(x0+x1)/2, cy=(y0+y1)/2;
+    const minW=W*.58, minH=H*.46;
+    x0=Math.min(x0,cx-minW/2); x1=Math.max(x1,cx+minW/2);
+    y0=Math.min(y0,cy-minH/2); y1=Math.max(y1,cy+minH/2);
+    x0-=W*.05; x1+=W*.05; y0-=H*.05; y1+=H*.05;
+    return {x0:clamp(x0,W*.04,W*.96), x1:clamp(x1,W*.04,W*.96),
+            y0:clamp(y0,H*.14,H*.94), y1:clamp(y1,H*.14,H*.94)};
+  }
+
+  function play(){
+    phase='play';
+    root.innerHTML=`
+      <div class="arena" id="arena"></div>
+      <div class="hud">
+        <div class="hud-l">🎯 <span id="sc">0</span> 分</div>
+        <div class="hud-c"><div class="timebar"><i id="tb"></i></div></div>
+        <div class="hud-r">宿敵：${nem.e} ${nem.t}</div>
+      </div>
+      <div class="combo" id="combo"></div>`;
+    arena=$('#arena');
+    box=computeBox();
+    sfx.go();
+  }
+
+  function spawn(){
+    if(!box || targets.length>=5) return;
+    const W=innerWidth,H=innerHeight;
+    const base=Math.min(W,H);
+    const tw=base*.26, th=tw*.78;
+    const isNem=Math.random()<.35;
+    const m=isNem?nem:pick(MINES.filter(x=>x!==nem));
+    const cxMin=Math.max(tw/2+6,box.x0), cxMax=Math.min(W-tw/2-6,box.x1);
+    const cyMin=Math.max(th/2+6,box.y0), cyMax=Math.min(H-th/2-6,box.y1);
+    if(cxMax<=cxMin||cyMax<=cyMin) return;
+    let x=0,y=0,ok=false;
+    for(let k=0;k<16&&!ok;k++){
+      const cx=cxMin+Math.random()*(cxMax-cxMin);
+      const cy=cyMin+Math.random()*(cyMax-cyMin);
+      x=cx-tw/2; y=cy-th/2;
+      ok=targets.every(t=>Math.abs(t.x-x)>tw*.92||Math.abs(t.y-y)>th*.95);
+    }
+    if(!ok) return;
+    const life=Math.max(1.5,2.8-T*.055);
+    const el=document.createElement('div');
+    el.className='target'+(isNem?' nem':'');
+    el.style.cssText=`left:${x}px;top:${y}px;width:${tw}px;height:${th}px`;
+    el.innerHTML=`<div class="em">${m.e}</div><div class="lbl">${m.t}</div>
+      <i class="life" style="animation-duration:${life}s"></i>`;
+    const t={el,x,y,w:tw,h:th,isNem,age:0,life,dwell:0,dead:false};
+    el.addEventListener('pointerdown',()=>{ if(!t.dead&&phase==='play') smash(t,{vx:Math.random()-.5}); });
+    arena.appendChild(el);
+    targets.push(t);
+  }
+
+  function smash(t,h){
+    t.dead=true;
+    const cx=t.x+t.w/2, cy=t.y+t.h/2, dir=(h.vx||0)>=0?1:-1;
+    t.el.style.setProperty('--fx',dir*(18+Math.random()*22)+'vw');
+    t.el.style.setProperty('--fr',dir*(220+Math.random()*300)+'deg');
+    t.el.classList.add('hit');
+    later(()=>t.el.remove(),650);
+    combo = T-lastHit<1.3 ? combo+1 : 1;
+    lastHit=T;
+    const pts=(t.isNem?30:10)+(combo>=3?Math.min(20,combo*2):0);
+    score+=pts; hits++; if(t.isNem) nemHits++;
+    sfx.hit();
+    burst(cx,cy,t.isNem?46:26,
+      t.isNem?['#FFD23F','#FF9F1C','#fff']:['#FF4D5E','#fff','#FFD23F'],
+      t.isNem?1.3:1);
+    floatText(cx,cy,(t.isNem?'宿敵 KO！':'')+'+'+pts,t.isNem?'#FFD23F':'#fff',t.isNem?1.25:1);
+    if(Math.random()<.3) floatText(cx,cy-innerHeight*.08,pick(SHOUTS),'#2EC4B6',.75);
+    const sc=$('#sc'); if(sc) sc.textContent=score;
+    if(combo>=3){
+      const c=$('#combo');
+      if(c){ c.textContent=`連擊 ×${combo}！`; c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse'); }
+    }
+  }
+
+  function finish(){
+    phase='end';
+    targets.forEach(t=>{t.dead=true;t.el.classList.add('gone');});
+    root.insertAdjacentHTML('beforeend',`<div class="center-msg overlay"><div class="cm-big">時間到！</div></div>`);
+    sfx.win();
+    Stats.bestScore('smash',score);
+    refreshMenuMeta();
+    const rank = score>=420?'🏆 避坑之神': score>=280?'💪 職場清道夫': score>=150?'👍 避雷新手':'😅 雷區求生者';
+    later(()=>{
+      showResult({
+        title:'恭喜避坑！',
+        sub:`宿敵「${nem.t}」已被你打爆 ${nemHits} 次`,
+        replay:'smash',
+        card:Cards.smash({score,rank,hits,nem}),
+        pitch:'想搵份唔使踩雷嘅好工，記得留意 <b>{brand}</b> 嘅篩選同評估！',
+        shareCode:`smash;${score};${nemIdx};${hits}`
+      });
+    },1300);
+  }
+
+  return {update(dt){
+    if(phase==='cal'){
+      calT+=dt;
+      const hs=liveHands();
+      for(const h of hs){
+        calSeen=true;
+        cal.x0=Math.min(cal.x0,h.x); cal.x1=Math.max(cal.x1,h.x);
+        cal.y0=Math.min(cal.y0,h.y); cal.y1=Math.max(cal.y1,h.y);
+      }
+      const p=Math.min(1,calT/3);
+      const arc=$('#cal-arc');
+      if(arc) arc.style.strokeDashoffset=2*Math.PI*45*(1-p);
+      const n=$('#cal-n');
+      if(n){ const s=Math.max(1,Math.ceil(3-calT)); if(n.textContent!==String(s)) n.textContent=s; }
+      if(calT>=3) play();
+      return;
+    }
+    if(phase!=='play') return;
+    T+=dt; left-=dt;
+    const tb=$('#tb'); if(tb) tb.style.width=Math.max(0,left/CONFIG.smashSeconds*100)+'%';
+    const sec=Math.ceil(left);
+    if(sec<lastSec && sec<=3 && sec>0) sfx.beep();
+    lastSec=sec;
+    spawnCD-=dt;
+    if(spawnCD<=0){ spawn(); spawnCD=.3+Math.random()*.3; }
+    const hs=liveHands();
+    for(const t of targets){
+      if(t.dead) continue;
+      t.age+=dt;
+      let inside=null;
+      for(const h of hs){
+        const pad=h.r*.55;
+        if(h.x>t.x-pad&&h.x<t.x+t.w+pad&&h.y>t.y-pad&&h.y<t.y+t.h+pad){inside=h;break;}
+      }
+      if(inside){
+        t.dwell+=dt;
+        if(inside.speed>CFG.hitSpeed*innerHeight || t.dwell>.3){ smash(t,inside); continue; }
+      }else t.dwell=0;
+      if(t.age>t.life){ t.dead=true; t.el.classList.add('gone'); later(()=>t.el.remove(),320); }
+    }
+    targets=targets.filter(t=>!t.dead);
+    if(left<=0) finish();
+  }};
+}
+
+/* ============================ 16. 遊戲 2：職場黃大仙 ============================ */
+const TUBE_SVG=(()=>{
+  let s='';
+  for(let i=0;i<9;i++){
+    const x=46+i*13.5, r=(i-4)*2.4, y=6+((i*37)%5)*6;
+    s+=`<g transform="rotate(${r} ${x} 200)">
+      <rect x="${x-5}" y="${y}" width="10" height="200" rx="3" fill="#ecca80" stroke="#a5792c" stroke-width="2"/>
+      <rect x="${x-5}" y="${y}" width="10" height="20" rx="3" fill="#d62839"/></g>`;
+  }
+  return `<svg viewBox="0 0 200 380" width="100%" height="100%">
+    <defs><linearGradient id="tg" x1="0" x2="1">
+      <stop offset="0" stop-color="#7d0a1e"/><stop offset=".45" stop-color="#e3213f"/><stop offset="1" stop-color="#7d0a1e"/>
+    </linearGradient></defs>
+    <ellipse cx="100" cy="120" rx="70" ry="16" fill="#4a0310"/>
+    <g class="sticks">${s}</g>
+    <rect x="30" y="120" width="140" height="252" rx="14" fill="url(#tg)"/>
+    <path d="M30 120 A70 16 0 0 0 170 120" fill="none" stroke="#ffd23f" stroke-width="6"/>
+    <rect x="30" y="150" width="140" height="10" fill="#ffd23f"/>
+    <rect x="30" y="335" width="140" height="10" fill="#ffd23f"/>
+    <circle cx="100" cy="248" r="52" fill="#ffd23f"/>
+    <text x="100" y="274" text-anchor="middle" font-size="74" font-weight="900" fill="#c8102e" font-family='${FONT}'>籤</text>
+  </svg>`;
+})();
+
+function FortuneGame(){
+  const root=gameRoot();
+  let phase='pray', prog=0, energy=0, lastSign=0, jig=0, rot=0;
+  let tx=innerWidth/2, ty=innerHeight*.58, tube=null, sticks=null, noHandT=0;
+
+  root.innerHTML=`
+    <div class="temple-bg"></div>
+    <div class="g-head">
+      <div class="g-title">🏮 職場黃大仙</div>
+      <div class="g-sub">求職運勢・誠心求籤</div>
+    </div>
+    <div class="pray-box">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" class="ring-bg"/>
+        <circle cx="50" cy="50" r="45" class="ring-fg" id="ring"/>
+      </svg>
+      <div class="pray-em">🙏</div>
+    </div>
+    <div class="big-s">${IS_PHONE?'誠心祈求一份好工':'雙手合十，誠心祈求一份好工'}</div>
+    <div class="mid-s" id="pray-st">${IS_PHONE?'將手掌舉高，停喺下面個掣 🙏':'將兩隻手舉起，合埋喺胸前'}</div>
+    <div class="btn small" data-dwell="1.6" id="b-pray">${IS_PHONE?'🙏 手掌停喺呢度祈求':'單手停喺呢度都得 👋'}</div>`;
+
+  const ring=$('#ring'), C=2*Math.PI*45;
+  ring.style.strokeDasharray=C; ring.style.strokeDashoffset=C;
+  $('#b-pray').onclick=()=>{ if(phase==='pray') startShake(); };
+
+  function startShake(){
+    phase='shake'; sfx.go();
+    root.innerHTML=`
+      <div class="temple-bg"></div>
+      <div class="g-head">
+        <div class="g-title">🏮 大力搖籤筒！</div>
+        <div class="g-sub">${IS_PHONE?'📱 大力搖手機，或者喺鏡頭前上下搖手！':'👋 揸住個籤筒上下大力搖，搖滿就出籤'}</div>
+        <div class="meter"><i id="mt"></i></div>
+      </div>
+      <div class="tube" id="tube">${TUBE_SVG}</div>
+      <div class="draw-hint">搖籤中…</div>`;
+    tube=$('#tube'); sticks=tube.querySelector('.sticks');
+    resetDwell();
+  }
+
+  function drop(){
+    phase='drop';
+    const idx=Math.random()*FORTUNES.length|0, f=FORTUNES[idx], no=1+(Math.random()*99|0);
+    sfx.whoosh(); sfx.drop();
+    const r=tube.getBoundingClientRect();
+    const x0=r.left+r.width/2, y0=r.top+r.height*.15, W=innerWidth, H=innerHeight;
+    const s=document.createElement('div');
+    s.className='fly-stick'; s.textContent=`第${cnNum(no)}籤`;
+    root.appendChild(s);
+    const tf=(x,y,rt,sc)=>`translate(${x}px,${y}px) translate(-50%,-50%) rotate(${rt}deg) scale(${sc})`;
+    s.animate([
+      {transform:tf(x0,y0,0,1)},
+      {transform:tf(x0,y0-H*.32,380,1.1),offset:.45},
+      {transform:tf(W/2,H/2,720,1.5)}
+    ],{duration:1300,easing:'cubic-bezier(.3,.7,.4,1)',fill:'forwards'});
+    tube.animate([{opacity:1},{opacity:0}],{duration:600,delay:300,fill:'forwards'});
+    later(()=>{ sfx.pop(); burst(W/2,H/2,50,['#FFD23F','#FF4D5E','#fff'],1.2); },1300);
+    later(()=>{
+      if(f.lv==='good') sfx.win();
+      showResult({
+        title: f.lv==='good'?'大吉大利！🎉': f.lv==='mid'?'求得好籤！':'唔怕！籤文僅供參考 😆',
+        sub:'📸 影低張卡，放上 IG Story 打卡',
+        replay:'fortune', gold:f.lv==='good',
+        card:Cards.fortune(f,no),
+        pitch:'好工唔係求返嚟，係揀返嚟 —— 用 <b>{brand}</b> 睇真實公司評價。',
+        shareCode:`fortune;${idx};${no}`
+      });
+    },2200);
+  }
+
+  return {update(dt){
+    const hs=liveHands(), H=innerHeight;
+    if(phase==='pray'){
+      let together=false;
+      if(hs.length>=2){
+        const d=Math.hypot(hs[0].x-hs[1].x,hs[0].y-hs[1].y);
+        together=d<CONFIG.prayDist*H;
+      }
+      prog = together ? prog+dt/1.2 : Math.max(0,prog-dt*.7);
+      ring.style.strokeDashoffset=C*(1-Math.min(1,prog));
+      const st=$('#pray-st');
+      if(st && !IS_PHONE) st.textContent = together?'🙏 誠心祈求中…':
+        hs.length>=2?'兩隻手再靠埋啲！':
+        hs.length===1?'偵測到一隻手，再舉起另一隻 ✋':'將兩隻手舉起，合埋喺胸前';
+      if(prog>=1){ burst(innerWidth/2,H*.45,30,['#FFD23F','#fff']); startShake(); }
+    }else if(phase==='shake'){
+      if(hs.length){
+        const ax=hs.reduce((s,h)=>s+h.x,0)/hs.length;
+        const ay=hs.reduce((s,h)=>s+h.y,0)/hs.length;
+        tx+=(ax-tx)*Math.min(1,dt*20); ty+=(ay-ty)*Math.min(1,dt*20);
+        noHandT=0;
+      }else{
+        noHandT+=dt;
+        tx+=(innerWidth/2-tx)*dt*2; ty+=(H*.58-ty)*dt*2;
+      }
+      const h0=hs[0];
+      if(h0 && h0.speed>.4*H) energy+=h0.speed*dt/H;
+      if(h0 && Math.abs(h0.vy)>.5*H){
+        const s=Math.sign(h0.vy);
+        if(lastSign && s!==lastSign){ sfx.clack(); jig=1; }
+        lastSign=s;
+      }
+      // 手機：直接搖部機都計
+      if(motion.shake>5){ energy+=(motion.shake-3.5)*dt*.09; jig=Math.max(jig,Math.min(1,motion.shake/14));
+        if(motion.shake>10 && !(motion.cd>0)){ sfx.clack(); motion.cd=.11; } }
+      motion.cd=(motion.cd||0)-dt; motion.shake*=Math.pow(.02,dt);
+      rot+=(clamp((h0?h0.vx:0)/H*14,-28,28)-rot)*Math.min(1,dt*10);
+      jig=Math.max(0,jig-dt*5);
+      const tw=tube.offsetWidth, th=tube.offsetHeight;
+      tube.style.transform=`translate(${tx-tw/2}px,${ty-th*.55}px) rotate(${rot+(Math.random()-.5)*jig*18}deg)`;
+      if(sticks) sticks.setAttribute('transform',`translate(0 ${-jig*16})`);
+      const mt=$('#mt'); if(mt) mt.style.width=Math.min(100,energy/CONFIG.shakeTarget*100)+'%';
+      if(energy>=CONFIG.shakeTarget) drop();
+    }
+  }};
+}
+
+/* ============================ 17. 遊戲 3：職場不可能三角 ============================ */
+function ChoiceGame(){
+  const root=gameRoot();
+  const qs=[...QUESTIONS].sort(()=>Math.random()-.5).slice(0,CONFIG.choiceRounds);
+  let qi=-1, timer=0, locked=true, lastSec=99;
+  const tally={}, picks=[], pickCodes=[];
+  next();
+
+  function next(){
+    qi++;
+    if(qi>=qs.length) return finish();
+    const q=qs[qi];
+    root.innerHTML=`
+      <div class="g-head">
+        <div class="g-title">⚖️ 職場不可能三角</div>
+        <div class="g-sub">第 ${qi+1} / ${qs.length} 題・👋 將手放喺你揀嗰邊！</div>
+        <div class="timebar wide"><i id="tb"></i></div>
+      </div>
+      <div class="vs-wrap">
+        <div class="opt optA" data-dwell=".7" id="oa">
+          <div class="opt-in"><div class="lab">A</div><div class="txt">${br(q.a.t)}</div>
+          <div class="hand-hint">👋 手掌停喺呢邊</div></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="opt optB" data-dwell=".7" id="ob">
+          <div class="opt-in"><div class="lab">B</div><div class="txt">${br(q.b.t)}</div>
+          <div class="hand-hint">👋 手掌停喺呢邊</div></div>
+        </div>
+      </div>`;
+    $('#oa').onclick=()=>choose('a');
+    $('#ob').onclick=()=>choose('b');
+    timer=CONFIG.choiceSeconds; lastSec=99; locked=false;
+    resetDwell(); dwellLock=nowMs()+350;
+  }
+
+  function choose(side){
+    if(locked) return;
+    locked=true;
+    const q=qs[qi], o=q[side];
+    tally[o.k]=(tally[o.k]||0)+1;
+    picks.push(o.t.replace(/\n/g,' '));
+    pickCodes.push(qi+side);
+    const st=Stats.choice(q.id,side);
+    const el=$(side==='a'?'#oa':'#ob'), other=$(side==='a'?'#ob':'#oa');
+    el.classList.add('chosen'); other.classList.add('dim');
+    el.querySelector('.opt-in').insertAdjacentHTML('beforeend',
+      `<div class="stat">今日 <b>${st.pct}%</b> 參加者同你揀一樣<br><small>（共 ${st.total} 票）</small></div>`);
+    sfx.select();
+    const r=el.getBoundingClientRect();
+    burst(r.left+r.width/2,r.top+r.height/2,34,[side==='a'?'#FF4D5E':'#2EC4B6','#fff','#FFD23F']);
+    later(next,1900);
+  }
+
+  function finish(){
+    const ks=Object.keys(tally);
+    let key;
+    if(!ks.length) key='NONE';
+    else{
+      const mx=Math.max(...ks.map(k=>tally[k]));
+      const top=ks.filter(k=>tally[k]===mx);
+      key=top.length>1?'BALANCE':top[0];
+    }
+    const t=TRAITS[key]; sfx.win();
+    const pickList=picks.length?[...picks]:[];
+    showResult({
+      title:`你係「${t.name}」！`,
+      sub:'職員會送你一張職場屬性貼紙 🏷️',
+      replay:'choice', gold:true,
+      card:Cards.trait(t,pickList),
+      pitch:'每個人嘅取捨都唔同 —— 用 <b>{brand}</b> 比較唔同公司，揀返最啱你嘅！',
+      shareCode:`trait;${key};${pickCodes.join('')}`
+    });
+  }
+
+  return {update(dt){
+    if(locked) return;
+    timer-=dt;
+    const tb=$('#tb'); if(tb) tb.style.width=Math.max(0,timer/CONFIG.choiceSeconds*100)+'%';
+    const sec=Math.ceil(timer);
+    if(sec<lastSec && sec<=3 && sec>0) sfx.beep();
+    lastSec=sec;
+    if(timer<=0){
+      locked=true; sfx.buzz();
+      const w=root.querySelector('.vs-wrap');
+      if(w) w.insertAdjacentHTML('beforeend','<div class="timeout">⏰ 時間到！猶豫就會敗北</div>');
+      later(next,1500);
+    }
+  }};
+}
+
+/* ============================ 18. 遊戲 4：開箱 Dream Job ============================ */
+function GachaGame(){
+  const root=gameRoot();
+  const gold=Math.random()<CONFIG.goldRate;
+  const color=pick(CAP_COLORS);
+  let phase='crank', total=0, prevA=null, lastTick=0, cap=null, openT=0;
+
+  let caps='';
+  for(let i=0;i<16;i++){
+    const x=4+Math.random()*70, y=30+Math.random()*58;
+    caps+=`<div class="cap" style="left:${x}%;top:${y}%;--c:${pick(CAP_COLORS)};transform:rotate(${Math.random()*360}deg)"></div>`;
+  }
+  root.innerHTML=`
+    <div class="g-head">
+      <div class="g-title">🎁 開箱你的 Dream Job</div>
+      <div class="g-sub">職業盲盒扭蛋機</div>
+    </div>
+    <div class="gacha-row">
+      <div class="gacha">
+        <div class="dome" id="dome">${caps}</div>
+        <div class="gbody">
+          <div class="glabel">${CONFIG.brand} 職業扭蛋</div>
+          <div class="crank" id="crank"><div class="knob" id="knob"></div><div class="orbit"></div></div>
+          <div class="chute" id="chute"></div>
+        </div>
+      </div>
+      <div class="gacha-hint">
+        <div class="gh-big" id="gh">👋 將手放喺扭柄旁邊<br>打圈扭 ${CONFIG.gachaTurns} 個圈！</div>
+        <div class="turnbar"><i id="tb"></i></div>
+        <div class="gh-s" id="gs">0 / ${CONFIG.gachaTurns} 圈</div>
+        <div class="gh-s">🌟 有機會扭中 <b>金色神工蛋</b>，送攤位小禮物！</div>
+      </div>
+    </div>`;
+
+  const crank=$('#crank'), knob=$('#knob'), dome=$('#dome');
+
+  function dispense(){
+    phase='drop';
+    crank.classList.remove('active');
+    dome.classList.add('shake');
+    sfx.drop();
+    const cr=$('#chute').getBoundingClientRect();
+    cap=document.createElement('div');
+    cap.className='big-cap'+(gold?' gold':'');
+    cap.style.setProperty('--c',color);
+    cap.innerHTML=`<div class="cap-ring"></div><div class="half top"></div><div class="half bot"></div>`;
+    const x0=cr.left+cr.width/2, y0=cr.top+cr.height/2;
+    const x1=innerWidth/2, y1=innerHeight*.56;
+    cap.style.left=x1+'px'; cap.style.top=y1+'px';
+    root.appendChild(cap);
+    cap.animate([
+      {left:x0+'px',top:y0+'px',transform:'translate(-50%,-50%) scale(.3)'},
+      {left:x1+'px',top:(y1-innerHeight*.12)+'px',transform:'translate(-50%,-50%) scale(1.15)',offset:.6},
+      {left:x1+'px',top:y1+'px',transform:'translate(-50%,-50%) scale(1)'}
+    ],{duration:900,easing:'ease-out'});
+    later(()=>{
+      dome.classList.remove('shake');
+      phase='open'; openT=0;
+      cap.classList.add('wobble');
+      cap.dataset.dwell='.7';
+      cap.onclick=openCap;
+      resetDwell(); dwellLock=0;
+      $('#gh').innerHTML = gold?'✨ 嘩！係金蛋！✨<br>揮手拍爆佢！':'💥 揮手拍爆個扭蛋！';
+      if(gold){ sfx.win(); burst(x1,y1,40,['#FFD23F','#fff'],1.2); }
+    },950);
+  }
+
+  function openCap(){
+    if(phase!=='open') return;
+    phase='done';
+    const r=cap.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    cap.classList.remove('wobble'); cap.classList.add('open');
+    sfx.pop();
+    burst(cx,cy,gold?70:40,gold?['#FFD23F','#fff','#ffb703']:[color,'#fff','#FFD23F'],1.3);
+    const job = gold ? pick(GOLD_JOBS) : pick(JOBS);
+    const idx = gold ? GOLD_JOBS.indexOf(job) : JOBS.indexOf(job);
+    if(gold) Stats.gold();
+    later(()=>{
+      if(gold) sfx.win();
+      showResult({
+        title: gold?'🎉 金蛋！理想神工！':'你嘅命定職業係…',
+        sub: gold?'請向工作人員領取攤位小禮物 🎁':'影低張卡，同朋友分享你嘅命定職業',
+        replay:'gacha', gold,
+        card:Cards.job(job,gold),
+        pitch:'想將命定職業變成真？用 <b>{brand}</b> 搵返份真正啱你嘅工！',
+        shareCode:`job;${idx};${gold?1:0}`
+      });
+    },900);
+  }
+
+  return {update(dt){
+    const hs=liveHands(), H=innerHeight;
+    if(phase==='crank'){
+      const cr=crank.getBoundingClientRect();
+      const cx=cr.left+cr.width/2, cy=cr.top+cr.height/2;
+      let best=null,bd=1e9;
+      for(const h of hs){ const d=Math.hypot(h.x-cx,h.y-cy); if(d<bd){bd=d;best=h;} }
+      const near=best && bd<H*.42 && bd>H*.015;
+      crank.classList.toggle('active',!!near);
+      if(near){
+        const a=Math.atan2(best.y-cy,best.x-cx);
+        if(prevA!==null){
+          let d=a-prevA;
+          while(d>Math.PI)d-=2*Math.PI;
+          while(d<-Math.PI)d+=2*Math.PI;
+          if(Math.abs(d)<1.2) total+=d;
+        }
+        prevA=a;
+      }else prevA=null;
+      const need=CONFIG.gachaTurns*2*Math.PI;
+      const p=Math.min(1,Math.abs(total)/need);
+      knob.style.transform=`rotate(${total}rad)`;
+      crank.style.setProperty('--p',p);
+      $('#tb').style.width=p*100+'%';
+      $('#gs').textContent=`${Math.min(CONFIG.gachaTurns,Math.floor(Math.abs(total)/(2*Math.PI)))} / ${CONFIG.gachaTurns} 圈`;
+      const tn=Math.floor(Math.abs(total)/(Math.PI/4));
+      if(tn!==lastTick){ lastTick=tn; sfx.tick(); }
+      if(p>=1) dispense();
+    }else if(phase==='open'){
+      openT+=dt;
+      const r=cap.getBoundingClientRect();
+      cap.style.setProperty('--p',cap._d||0);
+      if(openT>.8){
+        for(const h of hs){
+          if(h.x>r.left&&h.x<r.right&&h.y>r.top&&h.y<r.bottom&&h.speed>CFG.hitSpeed*H){
+            openCap(); break;
+          }
+        }
+      }
+    }
+  }};
+}
+
+/* ============================ 19. 背景繪製 ============================ */
+let bgT=0;
+function drawBg(dt){
+  const W=VIEW.w,H=VIEW.h;
+  bgT+=dt;
+  if(mode==='camera' && Cam.ready && video.readyState>=2){
+    const g=camGeom();
+    bgc.save();
+    if(CFG.mirror){ bgc.translate(W,0); bgc.scale(-1,1); }
+    bgc.drawImage(video,g.dx,g.dy,g.dw,g.dh);
+    bgc.restore();
+    const gr=bgc.createLinearGradient(0,0,0,H);
+    gr.addColorStop(0,'rgba(8,10,24,.72)');
+    gr.addColorStop(.45,'rgba(8,10,24,.42)');
+    gr.addColorStop(1,'rgba(8,10,24,.74)');
+    bgc.fillStyle=gr; bgc.fillRect(0,0,W,H);
+    const vg=bgc.createRadialGradient(W/2,H*.55,H*.15,W/2,H*.5,H*1.05);
+    vg.addColorStop(0,'rgba(0,0,0,0)');
+    vg.addColorStop(.65,'rgba(0,0,0,.12)');
+    vg.addColorStop(1,'rgba(0,0,0,.7)');
+    bgc.fillStyle=vg; bgc.fillRect(0,0,W,H);
+    // 品牌色洗底
+    const wash=bgc.createLinearGradient(0,0,W,0);
+    wash.addColorStop(0,'rgba(46,196,182,.10)');
+    wash.addColorStop(.5,'rgba(0,0,0,0)');
+    wash.addColorStop(1,'rgba(255,77,94,.10)');
+    bgc.fillStyle=wash; bgc.fillRect(0,0,W,H);
+  }else{
+    const gr=bgc.createRadialGradient(W*(.5+.2*Math.sin(bgT*.3)),H*.35,0,W*.5,H*.5,Math.max(W,H)*.85);
+    gr.addColorStop(0,'#252a5e');
+    gr.addColorStop(1,'#080a18');
+    bgc.fillStyle=gr; bgc.fillRect(0,0,W,H);
+    bgc.fillStyle='rgba(255,255,255,.032)';
+    const s=Math.min(W,H)*.06;
+    for(let x=0;x<W+s;x+=s)
+      for(let y=0;y<H+s;y+=s)
+        if((((x/s)|0)+((y/s)|0))%2) bgc.fillRect(x,(y+bgT*12)%(H+s)-s,s,s);
+  }
+  if(App.screen==='boot' && mode==='camera' && Cam.ready) drawFramingGuide();
+  if(App.screen==='result') drawResultGlow();
+}
+function drawFramingGuide(){
+  const W=VIEW.w,H=VIEW.h;
+  bgc.save();
+  bgc.strokeStyle='rgba(255,210,63,.45)';
+  bgc.lineWidth=3; bgc.setLineDash([14,12]);
+  bgc.strokeRect(W*.14,H*.12,W*.72,H*.78);
+  bgc.setLineDash([]);
+  bgc.fillStyle='rgba(255,210,63,.8)';
+  bgc.font=`800 ${Math.round(H*.022)}px ${FONT}`;
+  bgc.textAlign='center';
+  bgc.fillText('工作人員：請企喺框入面，見到手掌就 OK',W/2,H*.08);
+  bgc.restore();
+}
+function drawResultGlow(){
+  const W=VIEW.w,H=VIEW.h;
+  const g=bgc.createRadialGradient(W*.32,H*.5,0,W*.32,H*.5,H*.7);
+  g.addColorStop(0,'rgba(255,210,63,.12)');
+  g.addColorStop(1,'rgba(255,210,63,0)');
+  bgc.fillStyle=g; bgc.fillRect(0,0,W,H);
+}
+
+/* ============================ 20. 主迴圈 ============================ */
+let lastT=nowMs(), statusTxt='';
+function loop(now){
+  const dt=Math.min(.05,(now-lastT)/1000);
+  lastT=now;
+
+  if(mode==='camera'){
+    if(!tracker && !trackerLoading && !trackerFailed){
+      loadTracker().catch(e=>{
+        trackerLoading=false; trackerFailed=true;
+        console.error(e);
+        toast('手勢模型載入失敗，已切換滑鼠模式',5000);
+        mode='mouse';
+      });
+    }
+    if(tracker && Cam.ready && video.readyState>=2 && video.currentTime!==lastVT){
+      lastVT=video.currentTime;
+      try{ processDetections(tracker.detectForVideo(video,now),now); }
+      catch(e){ console.warn(e); }
+    }else if(!Cam.ready){
+      hands=[];
+    }
+  }else if(mode==='mouse'){
+    updateMouseHand(dt);
+  }
+
+  if(App.current && App.current.update) App.current.update(dt);
+  updateDwell(dt);
+  drawBg(dt);
+
+  fxc.clearRect(0,0,VIEW.w,VIEW.h);
+  drawParts(fxc,dt);
+  if(mode!=='none') drawHands(fxc);
+
+  // 狀態列（工作人員用）
+  const s = mode==='camera'
+    ? `📷 手勢模式 · ${liveHands().length} 隻手${Cam.ready?'':'（鏡頭未連線）'}`
+    : mode==='mouse' ? '🖱️ 滑鼠／觸控模式' : '';
+  if(s!==statusTxt){ statusTxt=s; $('#status').textContent=s; }
+
+  // 選單提示文字
+  const mh=$('#menu-hint');
+  if(mh && App.screen==='menu'){
+    mh.textContent = mode==='mouse' ? '👆 撳一下想玩嘅遊戲'
+      : liveHands().length ? '✋ 好！將手掌停喺想玩嘅遊戲上面'
+      : '👋 舉起手掌，停喺想玩嘅遊戲上面 1 秒';
+  }
+  // 冇人玩提示（只喺手勢模式、真係冇人時先出）
+  const idle=$('#idle-hint');
+  if(idle){
+    const show = App.screen==='menu' && mode==='camera' && (now-lastHandSeen>12000);
+    idle.classList.toggle('show',show);
+  }
+  // 遊戲中長時間冇手 → 返主頁
+  if(App.screen==='game' && mode==='camera' && now-lastHandSeen>CFG.idleSeconds*1000){
+    toast('冇人玩緊，返主頁 👋');
+    goMenu();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+/* ============================ 21. 啟動流程 ============================ */
+function setBootStatus(t){ const el=$('#boot-status'); if(el) el.innerHTML=t; }
+
+async function bootCamera(){
+  setBootStatus('📷 開啟鏡頭中…（如彈出視窗請按「允許」）');
+  audioInit();
+  try{ await Cam.start(); }
+  catch(e){
+    console.error(e);
+    const msg = e.name==='NotAllowedError' ? '鏡頭權限被拒絕'
+      : e.name==='NotFoundError' ? '搵唔到鏡頭'
+      : e.name==='NotReadableError' ? '鏡頭被其他程式佔用'
+      : (e.message||e.name);
+    setBootStatus(`⚠️ 開唔到鏡頭：${msg}<br>可以先用滑鼠／觸控模式，或按工作人員協助。`);
+    mode='mouse';
+    return false;
+  }
+  setBootStatus('🧠 載入手勢模型中…（第一次約 5–15 秒）');
+  try{
+    await loadTracker();
+  }catch(e){
+    console.error(e);
+    setBootStatus('⚠️ 手勢模型載入失敗（請檢查網絡）<br>已切換'+(IS_PHONE?'手指觸控':'滑鼠／觸控')+'模式');
+    mode='mouse';
+    return false;
+  }
+  mode='camera';
+  goMenu();
+  toast('手勢模式已啟動 ✋');
+  return true;
+}
+
+async function bootKiosk(){
+  const ok=await bootCamera();
+  if(!ok){
+    setTimeout(()=>{ if(App.screen==='boot') goMenu(); },1800);
+  }
+}
+
+$('#btn-start').onclick=async()=>{
+  audioInit(); if(IS_PHONE) enableMotion();
+  $('#btn-start').disabled=true;
+  await bootCamera();
+  $('#btn-start').disabled=false;
+};
+$('#btn-mouse').onclick=()=>{
+  audioInit(); if(IS_PHONE) enableMotion();
+  mode='mouse';
+  goMenu();
+  toast('滑鼠／觸控模式');
+};
+
+/* 全螢幕 + 螢幕保持亮著 */
+function toggleFS(){
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
+  else document.exitFullscreen?.();
+}
+let wakeLock=null;
+async function keepAwake(){
+  try{
+    if('wakeLock' in navigator && document.visibilityState==='visible'){
+      wakeLock=await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null;});
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') keepAwake(); });
+
+/* ============================ 22. 員工設定台 ============================ */
+const Staff = {
+  open:false,
+  toggle(){ this.open=!this.open; $('#staff').classList.toggle('show',this.open); if(this.open) this.render(); },
+  render(){
+    const d=Stats.today();
+    const names={smash:'擊碎爛工',fortune:'職場黃大仙',choice:'不可能三角',gacha:'Dream Job'};
+    let cells='';
+    Object.keys(names).forEach(k=>{
+      cells+=`<div class="stat-cell"><b>${d.done[k]||0}</b><span>${names[k]}</span></div>`;
+    });
+    const total=Stats.totalPlayers();
+    const html=`
+      <div class="staff-inner">
+        <div class="staff-head"><b>🛠 工作人員設定台</b><span>按 P 或 Esc 關閉・資料只存喺本機</span></div>
+        <div class="staff-grid">
+          <section>
+            <h4>今日統計（${d.day}）</h4>
+            <div class="stat-grid">${cells}</div>
+            <div class="staff-note">合共完成 ${total} 次・金蛋 ${d.golds||0} 個・最高分 ${d.best.smash||0}</div>
+            <div class="staff-row">
+              <button data-act="csv">匯出 CSV</button>
+              <button class="ghost" data-act="reset">清除今日統計</button>
+            </div>
+          </section>
+          <section>
+            <h4>鏡頭</h4>
+            <label>裝置 <select id="st-cam"></select></label>
+            <label class="chk"><input type="checkbox" id="st-mirror" ${CFG.mirror?'checked':''}> 左右鏡像</label>
+            <label class="chk"><input type="checkbox" id="st-skel" ${showSkel?'checked':''}> 顯示手部骨架</label>
+            <div class="staff-row">
+              <button data-act="camload">套用鏡頭</button>
+              <button class="ghost" data-act="cammode">切換手勢／滑鼠</button>
+            </div>
+            <div class="staff-note" id="st-caminfo">狀態：${mode==='camera'?(Cam.ready?'運作中':'未連線'):mode==='mouse'?'滑鼠模式':'未開始'}</div>
+          </section>
+          <section>
+            <h4>靈敏度</h4>
+            <label>揮手速度 <input type="range" id="st-hit" min="0.2" max="1.2" step="0.05" value="${CFG.hitSpeed}"><output>${CFG.hitSpeed.toFixed(2)}</output></label>
+            <label>手掌大小 <input type="range" id="st-min" min="0.04" max="0.16" step="0.005" value="${CFG.minHandSize}"><output>${CFG.minHandSize.toFixed(3)}</output></label>
+            <label>結果停留 <input type="range" id="st-timeout" min="10" max="90" step="5" value="${CFG.resultTimeout}"><output>${CFG.resultTimeout}秒</output></label>
+            <div class="staff-note">如果成日誤觸：調高手掌大小。如果揮手打唔中：調低揮手速度。</div>
+          </section>
+          <section>
+            <h4>系統</h4>
+            <div class="staff-row">
+              <button data-act="fs">全螢幕</button>
+              <button class="ghost" data-act="reload">重新載入</button>
+              <button class="ghost" data-act="sound">${CFG.sound?'🔊 音效開':'🔇 音效關'}</button>
+            </div>
+            <p class="staff-note">展覽用：用 start-windows.bat 啟動，會自動開 Chrome Kiosk 模式。<br>
+            QR 目標網址：${CONFIG.webUrl}<br>
+            隱私：鏡頭影像只留喺瀏覽器記憶體，唔會錄影或上傳。</p>
+          </section>
+        </div>
+      </div>`;
+    const el=$('#staff');
+    el.innerHTML=html;
+
+    Cam.devices().then(list=>{
+      const sel=$('#st-cam'); if(!sel) return;
+      sel.innerHTML = list.length
+        ? list.map((d,i)=>`<option value="${d.deviceId}">${d.label||('鏡頭 '+(i+1))}</option>`).join('')
+        : '<option value="">（未偵測到）</option>';
+    });
+
+    el.querySelectorAll('[data-act]').forEach(b=>{
+      b.onclick=()=>this.act(b.dataset.act);
+    });
+    $('#st-mirror').onchange=e=>{ CFG.mirror=e.target.checked; saveCfg(); };
+    $('#st-skel').onchange=e=>{ showSkel=e.target.checked; };
+    $('#st-hit').oninput=e=>{ CFG.hitSpeed=+e.target.value; e.target.nextElementSibling.textContent=CFG.hitSpeed.toFixed(2); saveCfg(); };
+    $('#st-min').oninput=e=>{ CFG.minHandSize=+e.target.value; e.target.nextElementSibling.textContent=CFG.minHandSize.toFixed(3); saveCfg(); };
+    $('#st-timeout').oninput=e=>{ CFG.resultTimeout=+e.target.value; e.target.nextElementSibling.textContent=CFG.resultTimeout+'秒'; saveCfg(); };
+  },
+  async act(a){
+    if(a==='reset'){
+      if(!confirm('清除今日統計？')) return;
+      Stats.d={day:Stats.dayKey(),plays:{},done:{},choices:{},golds:0,best:{}};
+      Stats.save(); this.render(); refreshMenuMeta(); toast('已清除今日統計');
+    }else if(a==='csv'){
+      const blob=new Blob(['\ufeff'+Stats.csv()],{type:'text/csv;charset=utf-8'});
+      const a2=document.createElement('a');
+      a2.href=URL.createObjectURL(blob);
+      a2.download=`rightpick-arcade-${Stats.dayKey()}.csv`;
+      a2.click();
+      setTimeout(()=>URL.revokeObjectURL(a2.href),2000);
+    }else if(a==='camload'){
+      const id=$('#st-cam').value;
+      if(!id) return;
+      Cam.deviceId=id;
+      try{ await Cam.start(id); mode='camera'; toast('已切換鏡頭'); this.render(); }
+      catch(e){ toast('切換失敗：'+(e.message||e.name)); }
+    }else if(a==='cammode'){
+      if(mode==='camera'){ mode='mouse'; toast('已切換滑鼠模式'); }
+      else{ mode='camera'; toast('已切換手勢模式'); }
+    }else if(a==='fs'){ toggleFS(); }
+    else if(a==='reload'){ location.reload(); }
+    else if(a==='sound'){ CFG.sound=!CFG.sound; saveCfg(); this.render(); }
+  }
+};
+
+/* ============================ 23. 快捷鍵 ============================ */
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='f'){ toggleFS(); return; }
+  if(k==='p'){ Staff.toggle(); return; }
+  if(k==='escape'){
+    if(Staff.open){ Staff.toggle(); return; }
+    if(App.screen!=='menu' && mode!=='none') goMenu();
+    return;
+  }
+  if(Staff.open) return;
+  if(k==='m' && mode!=='none'){
+    if(mode==='mouse'){ mode='camera'; toast('切換到手勢模式 ✋'); }
+    else{ mode='mouse'; hands=[]; toast('切換到滑鼠／觸控模式 🖱️'); }
+    return;
+  }
+  if(k==='s'){ showSkel=!showSkel; toast(showSkel?'顯示手部骨架':'隱藏手部骨架'); return; }
+  if(k==='0' && mode!=='none'){ goMenu(); return; }
+  if('1234'.includes(k) && k.length===1 && mode!=='none'){
+    startGame(['smash','fortune','choice','gacha'][+k-1]);
+  }
+});
+
+/* ============================ 24. 錯誤保護 ============================ */
+window.addEventListener('error',ev=>{
+  console.error(ev.error||ev.message);
+  if(isKiosk && App.screen==='game'){
+    setTimeout(()=>{ if(App.screen==='game') goMenu(); },800);
+  }
+});
+window.addEventListener('unhandledrejection',ev=>{
+  console.error(ev.reason);
+});
+
+/* ============================ 25. 手機打卡頁 ============================ */
+function phoneView(code){
+  const a=String(code).split(';');
+  let card=null, title='',sub='';
+  try{
+    if(a[0]==='smash'){
+      const score=+a[1]||0, nem=MINES[+a[2]||0]||MINES[0], hits=+a[3]||0;
+      const rank = score>=420?'🏆 避坑之神': score>=280?'💪 職場清道夫': score>=150?'👍 避雷新手':'😅 雷區求生者';
+      card=Cards.smash({score,rank,hits,nem});
+      title='你嘅避坑成績';
+      sub=`打爆咗 ${hits} 個職場地雷`;
+    }else if(a[0]==='fortune'){
+      const f=FORTUNES[+a[1]||0]||FORTUNES[0], no=+a[2]||1;
+      card=Cards.fortune(f,no); title=`${f.level}・${f.name}`; sub='職場黃大仙';
+    }else if(a[0]==='job'){
+      const gold=+a[2]===1;
+      const job=(gold?GOLD_JOBS:JOBS)[+a[1]||0] || JOBS[0];
+      card=Cards.job(job,gold); title='你嘅命定職業'; sub=job.n;
+    }else if(a[0]==='trait'){
+      const t=TRAITS[a[1]]||TRAITS.BALANCE;
+      const codes=(a[2]||'').match(/.{2}/g)||[];
+      const picks=codes.map(c=>{
+        const q=QUESTIONS[+c[0]];
+        return q&&q[c[1]] ? q[c[1]].t.replace(/\n/g,' ') : '';
+      }).filter(Boolean);
+      card=Cards.trait(t,picks); title=t.name; sub=brand(t.s);
+    }
+  }catch(e){ console.error(e); }
+
+  if(!card){ location.replace(CONFIG.webUrl); return; }
+
+  const r=$('#s-phone');
+  r.innerHTML=`
+    <div class="phone-head"><span class="rp">${CONFIG.brand}</span><span>職場遊樂場</span></div>
+    ${card}
+    <div class="phone-btns">
+      <button class="btn" id="ph-share">📤 分享</button>
+      <a class="btn ghost" href="${CONFIG.webUrl}" target="_blank" rel="noopener">去 RightPick</a>
+    </div>
+    <div class="phone-note">📸 長按畫面截圖，放上 IG Story<br>話俾朋友知你避開咗邊個職場地雷</div>`;
+  show('s-phone');
+  $('#ph-share').onclick=async()=>{
+    const data={title:`${CONFIG.brand} 職場遊樂場`,text:`${title} ${sub}`,url:location.href};
+    try{
+      if(navigator.share){ await navigator.share(data); }
+      else{
+        await navigator.clipboard.writeText(location.href);
+        toast('已複製連結');
+      }
+    }catch(e){}
+  };
+  document.title=`${title}｜${CONFIG.brand}`;
+}
+
+/* ============================ 26. 初始化 ============================ */
+function init(){
+  if(params.get('still')==='1'){
+    const st=document.createElement('style');
+    st.textContent='*,*::before,*::after{animation:none!important;transition:none!important}';
+    document.head.appendChild(st);
+  }
+  if(params.get('metrics')==='1'){
+    setTimeout(()=>{
+      const sel=['#s-phone','#s-phone .story','#s-phone .phone-head','#s-phone .phone-btns','.story','.res-side','.result-wrap'];
+      const rows=sel.map(s=>{
+        const e=document.querySelector(s);
+        if(!e) return s+' = missing';
+        const r=e.getBoundingClientRect();
+        return `${s} x=${Math.round(r.x)} y=${Math.round(r.y)} w=${Math.round(r.width)} h=${Math.round(r.height)}`;
+      });
+      rows.push(`innerW=${innerWidth} innerH=${innerHeight} docW=${document.documentElement.scrollWidth} scrollX=${Math.round(scrollX)}`);
+      const pre=document.createElement('pre');
+      pre.id='metrics';
+      pre.style.cssText='position:fixed;left:0;top:0;z-index:99999;background:#000;color:#0f0;font:13px monospace;padding:8px;margin:0;white-space:pre;pointer-events:none';
+      pre.textContent=rows.join('\n');
+      document.body.appendChild(pre);
+    },600);
+  }
+  if(location.hash.startsWith('#r=')){
+    phoneView(location.hash.slice(3));
+    return;
+  }
+  const qr=$('#menu-qr');
+  // 大螢幕：放咗上網（https）就顯示「掃碼用手機玩」；本機 localhost 就照舊指去 RightPick 官網
+  const playUrl = CONFIG.playUrl || (isLocalHost ? '' : location.origin+location.pathname);
+  if(qr) qrInto(qr, playUrl || CONFIG.webUrl);
+  if(playUrl && !IS_PHONE){
+    const ft=$('.menu-foot .foot-txt');
+    if(ft) ft.innerHTML='<b class="play">📱 排緊隊？掃碼用自己手機玩</b><br><span>用手機前鏡頭玩・完成挑戰即場蓋印</span>';
+  }
+  if(IS_PHONE){
+    const h=$('.boot-h1'); if(h) h.innerHTML='用你部<em>手機鏡頭</em>就玩';
+    const bp=$('.boot-p'); if(bp) bp.innerHTML='4 個 30 秒職場小遊戲<br>一隻手揸手機，另一隻手喺前鏡頭前面郁';
+    $('#btn-start').textContent='📷 開始玩';
+    $('#btn-mouse').textContent='👆 唔想開鏡頭？用手指玩';
+    const mh=$('#menu-hint'); if(mh) mh.textContent='✋ 將手掌停喺想玩嘅遊戲上面，或者直接撳';
+  }
+  if(IN_APP) $('#inapp').classList.add('on');
+  refreshMenuMeta();
+
+  if(params.get('mouse')==='1') mode='mouse';
+  if(params.get('sound')==='0') CFG.sound=false;
+
+  const g=params.get('game');
+  if(isKiosk){
+    bootKiosk().then(()=>{ if(g) lateStart(g); });
+  }else if(params.get('autostart')==='1'){
+    bootKiosk().then(()=>{ if(g) lateStart(g); });
+  }else{
+    // 等 staff 撳掣
+  }
+  if(params.get('mouse')==='1'){
+    mode='mouse';
+    goMenu();
+    if(g) lateStart(g);
+  }
+  if(params.get('demo')==='result') demoResult();
+  if(params.get('preview')==='1') goMenu();
+
+  keepAwake();
+  requestAnimationFrame(loop);
+}
+function lateStart(g){
+  setTimeout(()=>{ if(g && App.screen==='menu') startGame(g); },400);
+}
+function demoResult(){
+  mode = mode==='none' ? 'mouse' : mode;
+  const kind=params.get('card')||'fortune';
+  const f=FORTUNES[0], no=8;
+  const conf={
+    smash:{title:'恭喜避坑！', sub:'宿敵「無限無償 OT」已被你打爆 6 次', replay:'smash',
+      card:Cards.smash({score:320,rank:'💪 職場清道夫',hits:14,nem:MINES[0]}),
+      pitch:'想搵份唔使踩雷嘅好工，記得留意 <b>{brand}</b> 嘅篩選同評估！', shareCode:'smash;320;0;14'},
+    fortune:{title:'大吉大利！🎉', sub:'📸 影低張卡，放上 IG Story 打卡', replay:'fortune',
+      card:Cards.fortune(f,no), pitch:'好工唔係求返嚟，係揀返嚟 —— 用 <b>{brand}</b> 睇真實公司評價。',
+      shareCode:'fortune;0;8'},
+    job:{title:'🎉 金蛋！理想神工！', sub:'請向工作人員領取攤位小禮物 🎁', replay:'gacha', gold:true,
+      card:Cards.job(GOLD_JOBS[0],true), pitch:'想將命定職業變成真？用 <b>{brand}</b> 搵返份真正啱你嘅工！',
+      shareCode:'job;0;1'},
+    trait:{title:'你係「WLB 捍衛者」！', sub:'職員會送你一張職場屬性貼紙 🏷️', replay:'choice', gold:true,
+      card:Cards.trait(TRAITS.WLB,['月薪 2 萬 準時收工有 WFH','超好人但完全無能力嘅老細','穩定大公司嘅螺絲釘']),
+      pitch:'每個人嘅取捨都唔同 —— 用 <b>{brand}</b> 比較唔同公司，揀返最啱你嘅！',
+      shareCode:'trait;WLB;0a1a2a'}
+  };
+  const cfg=conf[kind]||conf.fortune;
+  setTimeout(()=>showResult(cfg),300);
+}
+
+/* 測試用 API（唔影響玩家） */
+window.__rp={startGame,goMenu,showResult,Cards,Stats,CONFIG,CFG,
+  get mode(){return mode;}, set mode(v){mode=v;},
+  get hands(){return hands;}, set hands(v){hands=v;}};
+
+init();
+</script>
+</body>
+</html>
